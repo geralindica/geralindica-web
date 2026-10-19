@@ -1,0 +1,119 @@
+// Gera as artes de divulgação (PNG pronto para gráfica/Instagram) com o QR Code real do canal.
+import QRCode from 'qrcode'
+
+export type TipoArte = 'encosto' | 'cartao' | 'story'
+
+const VERDE = '#0F9D58'
+const INK = '#0E1714'
+
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath()
+  ctx.moveTo(x + r, y)
+  ctx.arcTo(x + w, y, x + w, y + h, r)
+  ctx.arcTo(x + w, y + h, x, y + h, r)
+  ctx.arcTo(x, y + h, x, y, r)
+  ctx.arcTo(x, y, x + w, y, r)
+  ctx.closePath()
+}
+
+function textoQuebrado(ctx: CanvasRenderingContext2D, texto: string, x: number, y: number, larguraMax: number, altura: number, alinhar: CanvasTextAlign) {
+  ctx.textAlign = alinhar
+  const palavras = texto.split(' ')
+  let linha = ''
+  let yy = y
+  for (const p of palavras) {
+    const teste = linha ? `${linha} ${p}` : p
+    if (ctx.measureText(teste).width > larguraMax && linha) {
+      ctx.fillText(linha, x, yy)
+      linha = p
+      yy += altura
+    } else linha = teste
+  }
+  if (linha) ctx.fillText(linha, x, yy)
+  return yy + altura
+}
+
+function logo(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, cor: string, alinhar: 'center' | 'left' = 'center') {
+  ctx.font = `800 ${size}px Manrope, system-ui, sans-serif`
+  ctx.fillStyle = cor
+  const w = ctx.measureText('indikei').width
+  const x0 = alinhar === 'center' ? x - (w + size * 0.3) / 2 : x
+  ctx.textAlign = 'left'
+  ctx.fillText('indikei', x0, y)
+  ctx.beginPath()
+  ctx.arc(x0 + w + size * 0.17, y - size * 0.09, size * 0.13, 0, Math.PI * 2)
+  ctx.fill()
+}
+
+async function qrCanvas(link: string, px: number) {
+  const c = document.createElement('canvas')
+  await QRCode.toCanvas(c, link, { width: px, margin: 0, errorCorrectionLevel: 'M', color: { dark: INK, light: '#FFFFFF' } })
+  return c
+}
+
+export async function gerarArte(tipo: TipoArte, link: string, rotulo: string, codigo: string): Promise<Blob> {
+  await document.fonts?.ready
+  const dims = { encosto: [1200, 1600], cartao: [1050, 600], story: [1080, 1920] }[tipo]
+  const [W, H] = dims
+  const cv = document.createElement('canvas')
+  cv.width = W
+  cv.height = H
+  const ctx = cv.getContext('2d')!
+
+  ctx.fillStyle = VERDE
+  ctx.fillRect(0, 0, W, H)
+  ctx.fillStyle = '#fff'
+  ctx.textBaseline = 'alphabetic'
+
+  if (tipo === 'cartao') {
+    ctx.font = '800 64px Manrope, system-ui, sans-serif'
+    let y = textoQuebrado(ctx, 'Plano de saúde sem fila de corretor', 70, 150, 520, 74, 'left')
+    ctx.font = '600 30px Manrope, system-ui, sans-serif'
+    ctx.globalAlpha = 0.92
+    y = textoQuebrado(ctx, 'Aponte a câmera e receba sua cotação no WhatsApp.', 70, y + 20, 500, 40, 'left')
+    ctx.globalAlpha = 1
+    logo(ctx, 70, H - 70, 52, '#fff', 'left')
+    const q = 380
+    ctx.fillStyle = '#fff'
+    roundRect(ctx, W - q - 110, (H - q) / 2 - 40, q + 40, q + 40, 28)
+    ctx.fill()
+    ctx.drawImage(await qrCanvas(link, q), W - q - 90, (H - q) / 2 - 20)
+    ctx.fillStyle = '#fff'
+    ctx.font = '600 24px "JetBrains Mono", monospace'
+    ctx.textAlign = 'center'
+    ctx.fillText(`${rotulo} · ${codigo}`, W - q / 2 - 90, (H + q) / 2 + 60)
+  } else {
+    const story = tipo === 'story'
+    const q = story ? 620 : 640
+    ctx.font = `800 ${story ? 96 : 92}px Manrope, system-ui, sans-serif`
+    const yTitulo = textoQuebrado(ctx, 'Plano de saúde sem fila de corretor', W / 2, story ? 330 : 190, W - 200, story ? 108 : 104, 'center')
+    const yQR = yTitulo + (story ? 60 : 20)
+    ctx.fillStyle = '#fff'
+    roundRect(ctx, (W - q) / 2 - 36, yQR, q + 72, q + 72, 44)
+    ctx.fill()
+    ctx.drawImage(await qrCanvas(link, q), (W - q) / 2, yQR + 36)
+    ctx.fillStyle = '#fff'
+    ctx.font = `700 ${story ? 46 : 42}px Manrope, system-ui, sans-serif`
+    ctx.globalAlpha = 0.95
+    textoQuebrado(ctx, 'Aponte a câmera e receba sua cotação no WhatsApp', W / 2, yQR + q + 72 + (story ? 110 : 90), W - 240, story ? 58 : 54, 'center')
+    ctx.globalAlpha = 1
+    ctx.font = '600 30px "JetBrains Mono", monospace'
+    ctx.textAlign = 'center'
+    ctx.fillText(`${rotulo} · ${codigo}`, W / 2, H - (story ? 240 : 150))
+    logo(ctx, W / 2, H - (story ? 140 : 70), story ? 72 : 60, '#fff')
+  }
+
+  return new Promise((res, rej) => cv.toBlob((b) => (b ? res(b) : rej(new Error('Falha ao gerar a imagem'))), 'image/png'))
+}
+
+export async function baixarArte(tipo: TipoArte, link: string, rotulo: string, codigo: string) {
+  const blob = await gerarArte(tipo, link, rotulo, codigo)
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `indikei-${rotulo.toLowerCase().replace(/\s+/g, '-')}-${tipo}.png`
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 2000)
+}
