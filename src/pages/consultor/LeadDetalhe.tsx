@@ -109,7 +109,9 @@ export function LeadDetalhe() {
   const estimada = estimarMensalidade(mensal, alts)
   const semCanal = !lead.canal_id
   const zap = numeroInternacional(lead.telefone)
-  const triagem = Object.entries(lead.triagem ?? {})
+  const ordem = ['Tipo', 'Idade', 'Profissão', 'Abrangência', 'Acomodação', 'Obstetrícia', 'Dependentes']
+  const pos = (k: string) => (ordem.includes(k) ? ordem.indexOf(k) : ordem.length)
+  const triagem = Object.entries(lead.triagem ?? {}).sort(([a], [b]) => pos(a) - pos(b))
 
   return (
     <>

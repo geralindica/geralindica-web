@@ -4,6 +4,9 @@ import { useAuth } from '@/auth/AuthProvider'
 import { ETAPAS_FINAIS } from '@/lib/negocio'
 import type { ConsultorRow, LeadComOrigem, LeadEvento } from '@/lib/types'
 
+/** Data no fuso do navegador, no formato AAAA-MM-DD. */
+const diaLocal = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
 const SELECT_LEAD = '*, canal:canais(codigo, numero, nome), ind:indicadores(perfil, p:profiles(nome))'
 
 type LeadBruto = Omit<LeadComOrigem, 'indicador'> & { ind: { perfil: string | null; p: { nome: string } | null } | null }
@@ -85,10 +88,10 @@ export function useDashboard() {
       const dias: { dia: string; n: number }[] = []
       for (let i = 29; i >= 0; i--) {
         const d = new Date(Date.now() - i * 86400_000)
-        dias.push({ dia: d.toISOString().slice(0, 10), n: 0 })
+        dias.push({ dia: diaLocal(d), n: 0 })
       }
       for (const l of (porDia.data ?? []) as { created_at: string }[]) {
-        const k = new Date(l.created_at).toISOString().slice(0, 10)
+        const k = diaLocal(new Date(l.created_at))
         const d = dias.find((x) => x.dia === k)
         if (d) d.n++
       }

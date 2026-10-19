@@ -1,5 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
-import QRCode from 'qrcode'
+import type { ReactNode } from 'react'
 import { Lock, ShieldCheck } from 'lucide-react'
 import { brl, cn } from '@/lib/utils'
 import { calcularSplit, mascararCPF, mascararTelefone, STATUS_TX, pct } from '@/lib/negocio'
@@ -147,19 +146,6 @@ export function SeloLGPD() {
       Dados protegidos pela LGPD
     </div>
   )
-}
-
-/** QR Code real (SVG) apontando para o link rastreado do canal. */
-export function QR({ texto, size = 96, className }: { texto: string; size?: number; className?: string }) {
-  const [svg, setSvg] = useState('')
-  useEffect(() => {
-    let ok = true
-    QRCode.toString(texto, { type: 'svg', margin: 0, errorCorrectionLevel: 'M', color: { dark: '#0E1714', light: '#FFFFFF00' } }).then((s) => ok && setSvg(s))
-    return () => {
-      ok = false
-    }
-  }, [texto])
-  return <div className={cn('[&>svg]:block [&>svg]:size-full', className)} style={{ width: size, height: size }} dangerouslySetInnerHTML={{ __html: svg }} aria-label={`QR Code para ${texto}`} role="img" />
 }
 
 export function BarraFunil({ label, n, total, color }: { label: string; n: number; total: number; color: string }) {

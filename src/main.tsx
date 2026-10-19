@@ -1,10 +1,10 @@
-import { StrictMode } from 'react'
+import { StrictMode, Suspense, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from '@/auth/AuthProvider'
 import { RequireRole } from '@/auth/RequireRole'
-import { ToastProvider } from '@/components/ui/feedback'
+import { Carregando, ToastProvider } from '@/components/ui/feedback'
 import { Layout } from '@/components/Layout'
 import { Landing } from '@/pages/Landing'
 import { Vitrine } from '@/pages/Vitrine'
@@ -14,24 +14,26 @@ import { Cadastro } from '@/pages/Cadastro'
 import { RedefinirSenha } from '@/pages/RedefinirSenha'
 import { QrRedirect } from '@/pages/QrRedirect'
 import { Legal } from '@/pages/Legal'
-import { IndicadorLayout } from '@/pages/indicador/IndicadorLayout'
-import { Inicio } from '@/pages/indicador/Inicio'
-import { QrCodes } from '@/pages/indicador/QrCodes'
-import { Extrato } from '@/pages/indicador/Extrato'
-import { MeuConsultor } from '@/pages/indicador/MeuConsultor'
-import { Saques } from '@/pages/indicador/Saques'
-import { ConsultorLayout } from '@/pages/consultor/ConsultorLayout'
-import { Dashboard } from '@/pages/consultor/Dashboard'
-import { Leads } from '@/pages/consultor/Leads'
-import { LeadDetalhe } from '@/pages/consultor/LeadDetalhe'
-import { MeusIndicadores } from '@/pages/consultor/MeusIndicadores'
-import { PerfilPublico } from '@/pages/consultor/PerfilPublico'
-import { AdminLayout } from '@/pages/admin/AdminLayout'
-import { Financeiro } from '@/pages/admin/Financeiro'
-import { Split } from '@/pages/admin/Split'
-import { Usuarios } from '@/pages/admin/Usuarios'
-import { Catalogo } from '@/pages/admin/Catalogo'
 import './index.css'
+
+// Painéis carregados sob demanda: o site público não baixa o código das áreas logadas.
+const IndicadorLayout = lazy(() => import('@/pages/indicador/IndicadorLayout').then((m) => ({ default: m.IndicadorLayout })))
+const Inicio = lazy(() => import('@/pages/indicador/Inicio').then((m) => ({ default: m.Inicio })))
+const QrCodes = lazy(() => import('@/pages/indicador/QrCodes').then((m) => ({ default: m.QrCodes })))
+const Extrato = lazy(() => import('@/pages/indicador/Extrato').then((m) => ({ default: m.Extrato })))
+const MeuConsultor = lazy(() => import('@/pages/indicador/MeuConsultor').then((m) => ({ default: m.MeuConsultor })))
+const Saques = lazy(() => import('@/pages/indicador/Saques').then((m) => ({ default: m.Saques })))
+const ConsultorLayout = lazy(() => import('@/pages/consultor/ConsultorLayout').then((m) => ({ default: m.ConsultorLayout })))
+const Dashboard = lazy(() => import('@/pages/consultor/Dashboard').then((m) => ({ default: m.Dashboard })))
+const Leads = lazy(() => import('@/pages/consultor/Leads').then((m) => ({ default: m.Leads })))
+const LeadDetalhe = lazy(() => import('@/pages/consultor/LeadDetalhe').then((m) => ({ default: m.LeadDetalhe })))
+const MeusIndicadores = lazy(() => import('@/pages/consultor/MeusIndicadores').then((m) => ({ default: m.MeusIndicadores })))
+const PerfilPublico = lazy(() => import('@/pages/consultor/PerfilPublico').then((m) => ({ default: m.PerfilPublico })))
+const AdminLayout = lazy(() => import('@/pages/admin/AdminLayout').then((m) => ({ default: m.AdminLayout })))
+const Financeiro = lazy(() => import('@/pages/admin/Financeiro').then((m) => ({ default: m.Financeiro })))
+const Split = lazy(() => import('@/pages/admin/Split').then((m) => ({ default: m.Split })))
+const Usuarios = lazy(() => import('@/pages/admin/Usuarios').then((m) => ({ default: m.Usuarios })))
+const Catalogo = lazy(() => import('@/pages/admin/Catalogo').then((m) => ({ default: m.Catalogo })))
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: true, staleTime: 15_000 } },
@@ -43,6 +45,7 @@ createRoot(document.getElementById('root')!).render(
       <ToastProvider>
         <BrowserRouter>
           <AuthProvider>
+            <Suspense fallback={<Carregando tela />}>
             <Routes>
               <Route path="q/:codigo" element={<QrRedirect />} />
               <Route element={<Layout />}>
@@ -98,6 +101,7 @@ createRoot(document.getElementById('root')!).render(
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
+            </Suspense>
           </AuthProvider>
         </BrowserRouter>
       </ToastProvider>

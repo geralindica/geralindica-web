@@ -1,8 +1,9 @@
-import { useEffect, type ReactNode } from 'react'
+import { Suspense, useEffect, type ReactNode } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { LogOut, type LucideIcon } from 'lucide-react'
 import { Logo } from '@/components/Logo'
 import { Avatar } from '@/components/painel/comum'
+import { Carregando } from '@/components/ui/feedback'
 import { useAuth } from '@/auth/AuthProvider'
 import { cn } from '@/lib/utils'
 
@@ -22,7 +23,9 @@ type Props = {
 export function PainelLayout({ nav, subtitulo, papelLabel, foto, escuro, barraInferior, rodapeExtra, largura = 1320 }: Props) {
   const { profile, signOut } = useAuth()
   const { pathname } = useLocation()
-  useEffect(() => window.scrollTo(0, 0), [pathname])
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
   const nome = profile?.nome ?? ''
 
   const itemCls = (ativo: boolean) =>
@@ -109,7 +112,9 @@ export function PainelLayout({ nav, subtitulo, papelLabel, foto, escuro, barraIn
 
         <main className={cn('flex-1 px-[18px] py-5 sm:px-6 lg:px-10 lg:py-8', barraInferior && 'pb-28 lg:pb-8')}>
           <div className="mx-auto flex w-full flex-col gap-5" style={{ maxWidth: largura }}>
-            <Outlet />
+            <Suspense fallback={<Carregando />}>
+              <Outlet />
+            </Suspense>
           </div>
         </main>
 

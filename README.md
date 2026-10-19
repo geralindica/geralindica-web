@@ -1,7 +1,10 @@
-# Indikei · site público
+# Indikei
 
-Landing, vitrine de consultores, perfil, login e cadastro (stepper + Gov.br), implementados a partir do protótipo
-`Indikei Site.dc.html` (Claude Design). Stack: Vite + React + TypeScript + Tailwind (preset de tokens da Indikei) + lucide-react.
+Plataforma de indicações de planos de saúde: site público, painel do **Indicador**, painel do **Consultor** e painel **Admin**, com login, banco de dados e regras de acesso reais (Supabase).
+
+Stack: Vite + React 19 + TypeScript + Tailwind (tokens da Indikei) + React Query + Supabase (Postgres, Auth, Storage). Ícones `lucide-react`.
+
+## Rodar localmente
 
 ```bash
 npm install
@@ -9,8 +12,67 @@ npm run dev     # http://localhost:5173
 npm run build   # gera dist/
 ```
 
-Rotas: `/`, `/consultores`, `/consultores/:id`, `/entrar`, `/cadastro?papel=indicador|consultor&consultor=<id>`, `/painel/:papel` (placeholder).
+Precisa do `.env.local` (veja `.env.example`) com a URL e a chave *publishable* do projeto Supabase.
 
-Os dados de consultores ficam em `src/data/consultores.ts` (fictícios, fotos do Pexels). Login, cadastro e Gov.br ainda não têm backend.
+> Mantenha esta pasta fora do Google Drive: o `npm install` falha dentro de pastas sincronizadas.
 
-> Mantenha esta pasta fora do Google Drive: o `npm install` falha dentro da pasta sincronizada.
+## Contas de demonstração
+
+Criadas por `supabase/seed.sql` (senha de todas no próprio arquivo). Rodando localmente (`npm run dev`), a tela **Entrar** mostra botões de acesso rápido:
+
+| Papel | E-mail |
+|---|---|
+| Indicador | `carlos.mendes@demo.indikei.com.br` |
+| Consultor | `juliana.prado@demo.indikei.com.br` |
+| Admin | `admin@demo.indikei.com.br` |
+
+Os botões de demonstração **não aparecem** no build de produção. Antes de abrir o site ao público, apague ou troque a senha dessas contas.
+
+## Rotas
+
+| Área | Rotas |
+|---|---|
+| Site | `/`, `/consultores`, `/consultores/:id`, `/entrar`, `/cadastro?papel=indicador\|consultor&consultor=<id>`, `/redefinir-senha`, `/termos`, `/privacidade` |
+| QR Code | `/q/:codigo` conta o escaneamento e abre o WhatsApp com a mensagem e o código do canal |
+| Indicador | `/indicador`, `/indicador/qr`, `/indicador/extrato`, `/indicador/consultor`, `/indicador/saques` |
+| Consultor | `/consultor`, `/consultor/leads`, `/consultor/leads/:id`, `/consultor/indicadores`, `/consultor/perfil` |
+| Admin | `/admin`, `/admin/split`, `/admin/usuarios`, `/admin/catalogo` |
+
+## Como está organizado
+
+```
+src/
+  auth/            sessão, perfil e proteção de rotas por papel
+  components/      UI compartilhada (botões, badges, modal, toasts, layout dos painéis)
+  data/queries.ts  consultas públicas (vitrine, avaliações, config, catálogo)
+  integrations/    pontos de encaixe das integrações externas (simuladas hoje)
+  lib/negocio.ts   regras puras: split, máscaras LGPD, etapas, ranking, vagas
+  pages/           site público + indicador/ consultor/ admin/
+supabase/
+  migrations/      todo o banco: tabelas, RLS, triggers e funções
+  seed.sql         dados de demonstração
+```
+
+## Regras de negócio (aplicadas no banco)
+
+- **Regra do Verdinho**: mover o lead para *Contrato emitido* cria a transação (pendente); *Pagamento em custódia/Entrevista* trava o valor; *Aprovado* vira **Verdinho** (comissão liberada); *Reprovado* estorna 100%. Comissão já repassada não deixa a etapa mudar.
+- **Split**: bruto − imposto (27,5% PF ou Simples PJ) = líquido → 50% indicador / restante consultor + plataforma. Configurável em Admin → Split (vale para novas adesões).
+- **LGPD**: o indicador não lê a tabela de leads; o extrato vem de `extrato_indicador()`, que só devolve primeiro nome, data, canal, status, valores e os finais de CPF/telefone.
+- **Vagas**: no máximo 30 indicadores por consultor; trocar para um consultor lotado é bloqueado.
+- **Ranking**: vendas aprovadas e conversão calculadas por trigger; "Em alta" = 5+ aprovações em 30 dias; "Top 10" = top 10 com 75+ vendas.
+- Colunas sensíveis (papel, métricas, atribuição, escaneamentos) não podem ser alteradas pela API; mudanças passam por funções com checagem de permissão.
+
+## Integrações
+
+Veja `src/integrations/README.md`. Hoje WhatsApp/robô, Cotaí, Gov.br e Pix estão **simulados** (registram no histórico o que aconteceria). O QR Code → WhatsApp já é real.
+
+## Publicar (Vercel)
+
+`vercel.json` já faz o roteamento da SPA. Configure as variáveis `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` no projeto da Vercel e, no Supabase (Authentication → URL Configuration), adicione o domínio em *Site URL* e *Redirect URLs*.
+
+## Pendências fora do código
+
+1. **E-mail de confirmação**: o servidor de e-mail padrão do Supabase só envia para membros da equipe e tem limite baixo. Para cadastro público, configure um SMTP (ex.: Resend) em Authentication → Emails, ou desligue "Confirm email" em Authentication → Providers → Email.
+2. **Senhas vazadas**: ligar "Leaked password protection" em Authentication → Policies.
+3. **WhatsApp da operação**: cadastrar o número real em Admin → Split e impostos.
+4. **Termos e privacidade**: os textos em `/termos` e `/privacidade` são rascunhos para revisão jurídica.

@@ -55,7 +55,7 @@ export function Dashboard() {
     <>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="text-[14px] font-semibold capitalize text-ink-600">{hoje}</div>
+          <div className="text-[14px] font-semibold text-ink-600 first-letter:uppercase">{hoje}</div>
           <h1 className="m-0 mt-1 text-[26px] font-extrabold tracking-[-0.035em] sm:text-[30px]">
             {saudacao}, {primeiroNome(p.nome)}
           </h1>

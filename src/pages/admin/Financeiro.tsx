@@ -82,7 +82,7 @@ export function Financeiro() {
     <>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="text-[14px] font-semibold capitalize text-ink-600">{mes}</div>
+          <div className="text-[14px] font-semibold text-ink-600 first-letter:uppercase">{mes}</div>
           <h1 className="m-0 mt-1 text-[26px] font-extrabold tracking-[-0.035em] sm:text-[30px]">Financeiro e custódia</h1>
         </div>
         <Button variant="outline" size="sm" onClick={exportar} disabled={!linhas.length}>
@@ -130,8 +130,8 @@ export function Financeiro() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <div className="min-w-[1000px]">
-              <div className="grid grid-cols-[110px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_110px_120px_140px_160px] gap-3 border-b border-ink-200 bg-ink-50 px-5 py-2.5 text-[12px] font-bold text-ink-600">
+            <div className="min-w-[860px]">
+              <div className="grid grid-cols-[96px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_96px_104px_124px_136px] gap-3 border-b border-ink-200 bg-ink-50 px-5 py-2.5 text-[12px] font-bold text-ink-600">
                 <span>ID · data</span>
                 <span>Cliente</span>
                 <span>Consultor</span>
@@ -144,7 +144,7 @@ export function Financeiro() {
               {linhas.slice(0, 200).map((r) => {
                 const pode = r.status === 'verdinho'
                 return (
-                  <div key={r.id} className="grid grid-cols-[110px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_110px_120px_140px_160px] items-center gap-3 border-b border-ink-100 px-5 py-3 text-[14px] last:border-b-0">
+                  <div key={r.id} className="grid grid-cols-[96px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_96px_104px_124px_136px] items-center gap-3 border-b border-ink-100 px-5 py-3 text-[14px] last:border-b-0">
                     <div>
                       <div className="font-mono text-[12px] font-semibold">TX-{r.id.slice(0, 5).toUpperCase()}</div>
                       <div className="text-[12px] text-ink-400">{new Date(r.created_at).toLocaleDateString('pt-BR')}</div>
@@ -166,7 +166,7 @@ export function Financeiro() {
                       )}
                     >
                       {liberar.isPending && liberar.variables === r.id ? <Loader2 size={15} className="animate-spin" /> : <LockOpen size={15} />}
-                      {r.status === 'repassado' ? 'Liberada' : 'Liberar comissão'}
+                      {r.status === 'repassado' ? 'Liberada' : 'Liberar'}
                     </button>
                   </div>
                 )
