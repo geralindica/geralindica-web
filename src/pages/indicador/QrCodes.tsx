@@ -145,7 +145,7 @@ export function QrCodes() {
               <QR texto={linkCanal(primeiro.codigo)} size={120} />
             </div>
             <span className="text-[12px] font-semibold opacity-90">Aponte a câmera e receba sua cotação no WhatsApp</span>
-            <Logo small className="mt-auto gap-1.5 text-[15px] text-white [&>span]:size-5 [&>span]:text-[6px]" />
+            <Logo small className="mt-auto gap-1.5 text-[15px] text-white [&>img]:size-5" />
           </div>
           <p className="m-0 text-center text-[12px] text-ink-600">
             Ao escanear, o cliente abre o WhatsApp da Geralindica já com o código <b className="font-mono">{primeiro.codigo}</b>. O escaneamento é contado aqui.

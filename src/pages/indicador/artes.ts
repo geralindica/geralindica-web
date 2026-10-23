@@ -1,5 +1,6 @@
 // Gera as artes de divulgação (PNG pronto para gráfica/Instagram) com o QR Code real do canal.
 import QRCode from 'qrcode'
+import { MARCA } from '@/lib/marca'
 
 export type TipoArte = 'encosto' | 'cartao' | 'story'
 
@@ -33,34 +34,31 @@ function textoQuebrado(ctx: CanvasRenderingContext2D, texto: string, x: number, 
   return yy + altura
 }
 
-// Espaço reservado da logo (quadrado tracejado) + nome. Trocar pela logo definitiva quando existir.
-function logo(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, cor: string, alinhar: 'center' | 'left' = 'center') {
+// Símbolo da marca (public/marca.svg, o mesmo do site e do favicon) + nome.
+let simbolo: Promise<HTMLImageElement> | undefined
+function carregarSimbolo() {
+  simbolo ??= new Promise((res, rej) => {
+    const img = new Image()
+    img.onload = () => res(img)
+    img.onerror = () => rej(new Error('Não foi possível carregar a logo'))
+    img.src = MARCA.simbolo
+  })
+  return simbolo
+}
+
+async function logo(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, cor: string, alinhar: 'center' | 'left' = 'center') {
+  const img = await carregarSimbolo()
   ctx.font = `800 ${size}px Manrope, system-ui, sans-serif`
-  const w = ctx.measureText('Geralindica').width
+  const w = ctx.measureText(MARCA.nome).width
   const b = size * 1.15
   const gap = size * 0.35
   const x0 = alinhar === 'center' ? x - (b + gap + w) / 2 : x
   const topo = y - size * 0.36 - b / 2
 
-  ctx.save()
-  ctx.strokeStyle = cor
-  ctx.globalAlpha = 0.6
-  ctx.lineWidth = Math.max(2, size * 0.05)
-  ctx.setLineDash([size * 0.12, size * 0.09])
-  roundRect(ctx, x0, topo, b, b, size * 0.25)
-  ctx.stroke()
-  ctx.setLineDash([])
-  ctx.fillStyle = cor
-  ctx.font = `700 ${size * 0.26}px Manrope, system-ui, sans-serif`
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.fillText('LOGO', x0 + b / 2, topo + b / 2)
-  ctx.restore()
-
-  ctx.font = `800 ${size}px Manrope, system-ui, sans-serif`
+  ctx.drawImage(img, x0, topo, b, b)
   ctx.fillStyle = cor
   ctx.textAlign = 'left'
-  ctx.fillText('Geralindica', x0 + b + gap, y)
+  ctx.fillText(MARCA.nome, x0 + b + gap, y)
 }
 
 async function qrCanvas(link: string, px: number) {
@@ -90,7 +88,7 @@ export async function gerarArte(tipo: TipoArte, link: string, rotulo: string, co
     ctx.globalAlpha = 0.92
     textoQuebrado(ctx, 'Aponte a câmera e receba sua cotação no WhatsApp.', 70, y + 20, 500, 40, 'left')
     ctx.globalAlpha = 1
-    logo(ctx, 70, H - 70, 52, '#fff', 'left')
+    await logo(ctx, 70, H - 70, 52, '#fff', 'left')
     const q = 380
     ctx.fillStyle = '#fff'
     roundRect(ctx, W - q - 110, (H - q) / 2 - 40, q + 40, q + 40, 28)
@@ -118,7 +116,7 @@ export async function gerarArte(tipo: TipoArte, link: string, rotulo: string, co
     ctx.font = '600 30px "JetBrains Mono", monospace'
     ctx.textAlign = 'center'
     ctx.fillText(`${rotulo} · ${codigo}`, W / 2, H - (story ? 240 : 150))
-    logo(ctx, W / 2, H - (story ? 140 : 70), story ? 72 : 60, '#fff')
+    await logo(ctx, W / 2, H - (story ? 140 : 70), story ? 72 : 60, '#fff')
   }
 
   return new Promise((res, rej) => cv.toBlob((b) => (b ? res(b) : rej(new Error('Falha ao gerar a imagem'))), 'image/png'))

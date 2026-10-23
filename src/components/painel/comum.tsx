@@ -73,7 +73,7 @@ export function ReciboSplit({ e, pctIndicador = 50 }: { e: ExtratoItem; pctIndic
   const r = calcularSplit(e.bruto, e.aliquota, pctIndicador)
   return (
     <>
-      <Logo small className="text-[15px] text-ink-600 [&>span]:size-5 [&>span]:text-[6px]" />
+      <Logo small className="text-[15px] text-ink-600 [&>img]:size-5" />
       <div className="flex items-center gap-3 rounded-[14px] bg-ink-50 p-3">
         <span className="flex size-10 items-center justify-center rounded-[12px] font-extrabold" style={{ background: s.avBg, color: s.avFg }}>
           {e.primeiro_nome[0]}
