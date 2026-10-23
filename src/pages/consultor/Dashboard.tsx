@@ -147,7 +147,7 @@ export function Dashboard() {
               key={l.id + texto}
               type="button"
               onClick={() => nav(`/consultor/leads/${l.id}`)}
-              className="flex w-full cursor-pointer items-center gap-3.5 border-b border-ink-100 px-[22px] py-3.5 text-left last:border-b-0 hover:bg-[#FAFBFA]"
+              className="flex w-full cursor-pointer items-center gap-3.5 border-b border-ink-100 px-[22px] py-3.5 text-left last:border-b-0 hover:bg-[#F9FAFC]"
             >
               <span className={`flex size-9 shrink-0 items-center justify-center rounded-[10px] ${tom === 'azul' ? 'bg-azul-bg text-azul-fg' : 'bg-ambar-bg text-ambar-fg'}`}>
                 <Icon size={19} />

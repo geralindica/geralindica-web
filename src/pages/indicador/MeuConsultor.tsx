@@ -146,7 +146,7 @@ export function MeuConsultor() {
 
   // idle com consultor
   const c = atual!
-  const zap = config.data ? linkWhatsApp(config.data.whatsapp_numero, `Olá! Sou ${p.nome}, indicador(a) da Indikei, e quero falar com ${c.nome_exibicao}.`) : undefined
+  const zap = config.data ? linkWhatsApp(config.data.whatsapp_numero, `Olá! Sou ${p.nome}, indicador(a) da Geralindica, e quero falar com ${c.nome_exibicao}.`) : undefined
   return (
     <>
       <h1 className="m-0 text-[24px] font-extrabold tracking-[-0.03em]">Meu consultor</h1>

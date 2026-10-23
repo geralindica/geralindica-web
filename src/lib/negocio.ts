@@ -1,4 +1,4 @@
-// Regras de negócio puras da Indikei. Nada de valor de comissão escrito à mão nas telas:
+// Regras de negócio puras da Geralindica. Nada de valor de comissão escrito à mão nas telas:
 // tudo passa por estas funções (as mesmas fórmulas existem no banco, em extrato_indicador()).
 import type { Consultor, ConsultorRow, Etapa, StatusTx } from './types'
 
@@ -84,16 +84,16 @@ export function cnpjValido(cnpj: string) {
 
 // ---------- Etapas do funil (CRM) ----------
 export const ETAPAS: { id: Etapa; nome: string; dot: string; bg: string; kanban: boolean }[] = [
-  { id: 'novo', nome: 'Novo', dot: '#8A9590', bg: '#ECF0EE', kanban: true },
-  { id: 'triagem', nome: 'Em triagem (robô)', dot: '#3B7BE8', bg: '#ECF0EE', kanban: true },
-  { id: 'cotacao', nome: 'Cotação enviada', dot: '#3B7BE8', bg: '#ECF0EE', kanban: true },
-  { id: 'negociacao', nome: 'Negociação', dot: '#3B7BE8', bg: '#ECF0EE', kanban: true },
-  { id: 'contrato', nome: 'Contrato emitido', dot: '#3B7BE8', bg: '#ECF0EE', kanban: true },
+  { id: 'novo', nome: 'Novo', dot: '#8494A8', bg: '#EAEFF5', kanban: true },
+  { id: 'triagem', nome: 'Em triagem (robô)', dot: '#3B7BE8', bg: '#EAEFF5', kanban: true },
+  { id: 'cotacao', nome: 'Cotação enviada', dot: '#3B7BE8', bg: '#EAEFF5', kanban: true },
+  { id: 'negociacao', nome: 'Negociação', dot: '#3B7BE8', bg: '#EAEFF5', kanban: true },
+  { id: 'contrato', nome: 'Contrato emitido', dot: '#3B7BE8', bg: '#EAEFF5', kanban: true },
   { id: 'custodia', nome: 'Pagamento em custódia', dot: '#F2A516', bg: '#FFF8E8', kanban: true },
   { id: 'entrevista', nome: 'Entrevista de saúde', dot: '#F2A516', bg: '#FFF8E8', kanban: true },
   { id: 'aprovado', nome: 'Aprovado (Verdinho)', dot: '#FFFFFF', bg: '#0F9D58', kanban: true },
   { id: 'reprovado', nome: 'Reprovado (estornado)', dot: '#E2574C', bg: '#FDF3F2', kanban: true },
-  { id: 'perdido', nome: 'Perdido (desistiu)', dot: '#8A9590', bg: '#ECF0EE', kanban: false },
+  { id: 'perdido', nome: 'Perdido (desistiu)', dot: '#8494A8', bg: '#EAEFF5', kanban: false },
 ]
 export const nomeEtapa = (e: Etapa) => ETAPAS.find((x) => x.id === e)?.nome ?? e
 export const ETAPAS_FINAIS: Etapa[] = ['aprovado', 'reprovado', 'perdido']
@@ -105,7 +105,7 @@ export function corEtapa(e: Etapa) {
   if (dot === '#F2A516') return { bg: '#FFF3D6', fg: '#9A5B00', dot }
   if (dot === '#3B7BE8') return { bg: '#E7EFFC', fg: '#1F5BBF', dot }
   if (dot === '#E2574C') return { bg: '#FCEAE8', fg: '#B3372F', dot }
-  return { bg: '#ECF0EE', fg: '#24302C', dot: '#8A9590' }
+  return { bg: '#EAEFF5', fg: '#1F2E45', dot: '#8494A8' }
 }
 
 // ---------- Status financeiro (badge) ----------
@@ -113,7 +113,7 @@ export const STATUS_TX: Record<StatusTx, { label: string; bg: string; fg: string
   pendente: { label: 'Pendente', bg: '#FFFBF0', fg: '#9A5B00', border: '1px dashed #F2A516', avBg: '#FFF3D6', avFg: '#9A5B00', nota: 'Aguardando o cliente pagar a adesão. Sem valor em custódia ainda.', notaBg: '#FFFBF0' },
   custodia: { label: 'Em custódia', bg: '#FFF3D6', fg: '#9A5B00', border: '0', avBg: '#FFF3D6', avFg: '#9A5B00', nota: 'Pagamento recebido e bloqueado até a entrevista de saúde. Se aprovado, vira Verdinho.', notaBg: '#FFF3D6' },
   verdinho: { label: 'Verdinho ✓', bg: '#0F9D58', fg: '#fff', border: '0', avBg: '#ECF8F1', avFg: '#0A7F47', nota: 'Entrevista aprovada. Comissão liberada para saque.', notaBg: '#ECF8F1' },
-  repassado: { label: 'Verdinho · pago', bg: '#ECF8F1', fg: '#0A7F47', border: '0', avBg: '#ECF0EE', avFg: '#4E5B56', nota: 'Comissão já transferida via Pix.', notaBg: '#ECF8F1' },
+  repassado: { label: 'Verdinho · pago', bg: '#ECF8F1', fg: '#0A7F47', border: '0', avBg: '#EAEFF5', avFg: '#4A5B70', nota: 'Comissão já transferida via Pix.', notaBg: '#ECF8F1' },
   estornado: { label: 'Estornado', bg: '#FCEAE8', fg: '#B3372F', border: '0', avBg: '#FCEAE8', avFg: '#B3372F', nota: 'Cliente reprovado na entrevista de saúde. Valor estornado 100% ao cliente; não há comissão.', notaBg: '#FCEAE8' },
 }
 
@@ -124,7 +124,7 @@ const TOP_MIN_VENDAS = 75
 const EM_ALTA_30D = 5
 
 export function corVagas(full: boolean, vagas: number) {
-  if (full) return '#8A9590'
+  if (full) return '#8494A8'
   return vagas <= 3 ? '#9A5B00' : '#0A7F47'
 }
 

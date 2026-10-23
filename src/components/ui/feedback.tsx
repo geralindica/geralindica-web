@@ -107,7 +107,7 @@ export function Modal({
   if (!aberto) return null
   return (
     <div
-      className={cn('fixed inset-0 z-50 flex justify-center bg-[rgba(14,23,20,.45)]', sheetNoMobile ? 'items-end sm:items-center sm:p-6' : 'items-center p-4 sm:p-6')}
+      className={cn('fixed inset-0 z-50 flex justify-center bg-[rgba(11,26,48,.45)]', sheetNoMobile ? 'items-end sm:items-center sm:p-6' : 'items-center p-4 sm:p-6')}
       onClick={onFechar}
     >
       <div

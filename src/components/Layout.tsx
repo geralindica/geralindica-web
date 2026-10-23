@@ -24,9 +24,9 @@ const navItem = 'rounded-[10px] px-3 py-2 text-[14px] font-semibold text-ink-600
 function Header() {
   const { profile } = useAuth()
   return (
-    <header className="sticky top-0 z-20 border-b border-ink-200 bg-[rgba(245,247,246,.88)] backdrop-blur-[12px]">
+    <header className="sticky top-0 z-20 border-b border-ink-200 bg-[rgba(244,247,250,.88)] backdrop-blur-[12px]">
       <div className="mx-auto flex max-w-[1200px] items-center gap-4 px-4 py-[14px] sm:gap-7 sm:px-7">
-        <Link to="/" aria-label="Indikei, página inicial">
+        <Link to="/" aria-label="Geralindica, página inicial">
           <Logo />
         </Link>
         <nav className="hidden flex-wrap gap-1 lg:flex">
@@ -67,7 +67,7 @@ function Footer() {
     <footer className="mt-auto border-t border-ink-200 bg-white">
       <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-6 px-7 py-8 text-[13px] text-ink-600">
         <Logo small />
-        <span>© 2026 Indikei Tecnologia Ltda.</span>
+        <span>© 2026 Geralindica</span>
         <div className="flex gap-4 sm:ml-auto">
           <Link to="/termos" className="hover:text-ink-950">
             Termos

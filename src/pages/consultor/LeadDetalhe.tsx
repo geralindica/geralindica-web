@@ -33,10 +33,10 @@ import { useLead } from './dados'
 const ICONE_EVENTO: Record<LeadEvento['tipo'], { icon: LucideIcon; bg: string; fg: string }> = {
   robo: { icon: Bot, bg: '#E7EFFC', fg: '#1F5BBF' },
   pdf: { icon: FileText, bg: '#FCEAE8', fg: '#B3372F' },
-  consultor: { icon: User, bg: '#ECF0EE', fg: '#24302C' },
+  consultor: { icon: User, bg: '#EAEFF5', fg: '#1F2E45' },
   cliente: { icon: MessageCircle, bg: '#FFF3D6', fg: '#9A5B00' },
   sistema: { icon: CheckCircle2, bg: '#ECF8F1', fg: '#0A7F47' },
-  nota: { icon: StickyNote, bg: '#F5F7F6', fg: '#4E5B56' },
+  nota: { icon: StickyNote, bg: '#F4F7FA', fg: '#4A5B70' },
 }
 
 /** Ação do detalhe do lead: executa, recarrega o lead/CRM e avisa o resultado. */
@@ -297,7 +297,7 @@ export function LeadDetalhe() {
                 {mostrar ? 'Ocultar dados' : 'Mostrar dados'}
               </button>
               {zap && (
-                <a href={linkWhatsApp(zap, `Olá, ${primeiroNome(lead.nome)}! Aqui é da Indikei.`)} target="_blank" rel="noreferrer" className="ml-auto flex items-center gap-1.5 text-[12px] font-bold text-verde-700">
+                <a href={linkWhatsApp(zap, `Olá, ${primeiroNome(lead.nome)}! Aqui é da Geralindica.`)} target="_blank" rel="noreferrer" className="ml-auto flex items-center gap-1.5 text-[12px] font-bold text-verde-700">
                   <MessagesSquare size={15} />
                   Abrir conversa
                 </a>

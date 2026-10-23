@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/form'
 import { Card, TituloPagina } from '@/components/painel/comum'
 import { QR } from '@/components/painel/QR'
+import { Logo } from '@/components/Logo'
 import { Carregando, ErroBox, Modal, useToast } from '@/components/ui/feedback'
 import { linkCanal, rotuloCanal, useCanais } from './dados'
 import { baixarArte, type TipoArte } from './artes'
@@ -144,12 +145,10 @@ export function QrCodes() {
               <QR texto={linkCanal(primeiro.codigo)} size={120} />
             </div>
             <span className="text-[12px] font-semibold opacity-90">Aponte a câmera e receba sua cotação no WhatsApp</span>
-            <span className="mt-auto flex items-baseline gap-px text-[15px] font-extrabold tracking-[-0.045em]">
-              indikei<span className="inline-block size-1 rounded-full bg-white" />
-            </span>
+            <Logo small className="mt-auto gap-1.5 text-[15px] text-white [&>span]:size-5 [&>span]:text-[6px]" />
           </div>
           <p className="m-0 text-center text-[12px] text-ink-600">
-            Ao escanear, o cliente abre o WhatsApp da Indikei já com o código <b className="font-mono">{primeiro.codigo}</b>. O escaneamento é contado aqui.
+            Ao escanear, o cliente abre o WhatsApp da Geralindica já com o código <b className="font-mono">{primeiro.codigo}</b>. O escaneamento é contado aqui.
           </p>
         </Card>
       )}

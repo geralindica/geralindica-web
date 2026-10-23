@@ -64,7 +64,7 @@ export function Login() {
         }}
         className="flex w-full max-w-[440px] flex-col gap-5 self-start rounded-[28px] border border-ink-200 bg-white p-6 sm:p-9"
       >
-        <h1 className="m-0 text-[30px] font-extrabold tracking-[-0.035em]">{modo === 'entrar' ? 'Entrar na Indikei' : 'Recuperar senha'}</h1>
+        <h1 className="m-0 text-[30px] font-extrabold tracking-[-0.035em]">{modo === 'entrar' ? 'Entrar na Geralindica' : 'Recuperar senha'}</h1>
         <Field label="E-mail" name="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="voce@email.com" required />
         {modo === 'entrar' && <Field label="Senha" name="senha" type="password" autoComplete="current-password" value={senha} onChange={(e) => setSenha(e.target.value)} placeholder="••••••••" required />}
         {erro && (

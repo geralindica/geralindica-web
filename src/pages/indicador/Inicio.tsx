@@ -85,7 +85,7 @@ export function Inicio() {
           <ErroBox erro={funil.error} />
         ) : (
           <>
-            <BarraFunil label="Escaneamentos" n={funil.data!.escaneamentos} total={funil.data!.escaneamentos} color="#24302C" />
+            <BarraFunil label="Escaneamentos" n={funil.data!.escaneamentos} total={funil.data!.escaneamentos} color="#1F2E45" />
             <BarraFunil label="Conversas no WhatsApp" n={funil.data!.conversas} total={funil.data!.escaneamentos} color="#3B7BE8" />
             <BarraFunil label="Cotações enviadas" n={funil.data!.cotacoes} total={funil.data!.escaneamentos} color="#3B7BE8" />
             <BarraFunil label="Fechados" n={funil.data!.fechados} total={funil.data!.escaneamentos} color="#F2A516" />

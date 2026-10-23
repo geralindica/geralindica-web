@@ -4,6 +4,7 @@ import { brl, cn } from '@/lib/utils'
 import { calcularSplit, mascararCPF, mascararTelefone, STATUS_TX, pct } from '@/lib/negocio'
 import type { ExtratoItem } from '@/lib/types'
 import { StatusBadge } from '@/components/ui/badges'
+import { Logo } from '@/components/Logo'
 
 export function Avatar({ nome, foto, size = 36, rounded = 'full', className }: { nome: string; foto?: string | null; size?: number; rounded?: 'full' | 'xl'; className?: string }) {
   const r = rounded === 'full' ? 'rounded-full' : 'rounded-[22px]'
@@ -40,12 +41,12 @@ export function TituloPagina({ titulo, sub, children }: { titulo: string; sub?: 
 /** Linha de extrato do indicador (dados do cliente já filtrados pela LGPD no banco). */
 export function LinhaExtrato({ e, onClick, mostrarCanal }: { e: ExtratoItem; onClick: () => void; mostrarCanal?: boolean }) {
   const s = STATUS_TX[e.status]
-  const cor = e.status === 'estornado' || e.status === 'pendente' ? '#8A9590' : e.status === 'custodia' ? '#4E5B56' : '#0E1714'
+  const cor = e.status === 'estornado' || e.status === 'pendente' ? '#8494A8' : e.status === 'custodia' ? '#4A5B70' : '#0B1A30'
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full cursor-pointer items-center gap-3 border-b border-ink-100 bg-white px-4 py-[14px] text-left last:border-b-0 hover:bg-[#FAFBFA]"
+      className="flex w-full cursor-pointer items-center gap-3 border-b border-ink-100 bg-white px-4 py-[14px] text-left last:border-b-0 hover:bg-[#F9FAFC]"
     >
       <span className="flex size-10 shrink-0 items-center justify-center rounded-[12px] font-extrabold" style={{ background: s.avBg, color: s.avFg }}>
         {e.primeiro_nome[0]}
@@ -72,6 +73,7 @@ export function ReciboSplit({ e, pctIndicador = 50 }: { e: ExtratoItem; pctIndic
   const r = calcularSplit(e.bruto, e.aliquota, pctIndicador)
   return (
     <>
+      <Logo small className="text-[15px] text-ink-600 [&>span]:size-5 [&>span]:text-[6px]" />
       <div className="flex items-center gap-3 rounded-[14px] bg-ink-50 p-3">
         <span className="flex size-10 items-center justify-center rounded-[12px] font-extrabold" style={{ background: s.avBg, color: s.avFg }}>
           {e.primeiro_nome[0]}

@@ -98,7 +98,7 @@ export function Saques() {
           <div className="flex items-start gap-2.5 rounded-[12px] bg-ambar-bg px-3.5 py-3 text-[13px] font-semibold leading-[1.5] text-ambar-fg">
             <Receipt size={19} className="shrink-0" />
             {pj
-              ? `PJ: o imposto segue a alíquota do Simples Nacional (${pct(config.data.aliquota_pj)} padrão). Emita nota fiscal para a Indikei antes de cada saque.`
+              ? `PJ: o imposto segue a alíquota do Simples Nacional (${pct(config.data.aliquota_pj)} padrão). Emita nota fiscal para a Geralindica antes de cada saque.`
               : `PF: ${pct(config.data.aliquota_pf)} de imposto é retido sobre o valor bruto antes do split. O valor que você vê já é líquido, sem nota fiscal.`}
           </div>
         )}

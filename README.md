@@ -1,8 +1,8 @@
-# Indikei
+# Geralindica
 
 Plataforma de indicações de planos de saúde: site público, painel do **Indicador**, painel do **Consultor** e painel **Admin**, com login, banco de dados e regras de acesso reais (Supabase).
 
-Stack: Vite + React 19 + TypeScript + Tailwind (tokens da Indikei) + React Query + Supabase (Postgres, Auth, Storage). Ícones `lucide-react`.
+Stack: Vite + React 19 + TypeScript + Tailwind (tokens da Geralindica) + React Query + Supabase (Postgres, Auth, Storage). Ícones `lucide-react`.
 
 ## Rodar localmente
 
@@ -26,7 +26,7 @@ Criadas por `supabase/seed.sql` (senha de todas no próprio arquivo). Rodando lo
 | Consultor | `juliana.prado@demo.indikei.com.br` |
 | Admin | `admin@demo.indikei.com.br` |
 
-Os botões de demonstração **não aparecem** no build de produção. Antes de abrir o site ao público, apague ou troque a senha dessas contas.
+As contas de demonstração ainda usam o domínio antigo `demo.indikei.com.br` (são só de teste e saem antes do lançamento). Os botões **não aparecem** no build de produção. Antes de abrir o site ao público, apague ou troque a senha dessas contas.
 
 ## Rotas
 

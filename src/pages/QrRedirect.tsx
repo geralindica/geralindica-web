@@ -28,7 +28,7 @@ export function QrRedirect() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-5 bg-verde-600 px-6 text-center text-white">
-      <Logo className="text-[32px] text-white [&>span]:bg-white" />
+      <Logo className="text-[32px] text-white" />
       {erro ? (
         <>
           <h1 className="m-0 text-[24px] font-extrabold">Código não encontrado</h1>

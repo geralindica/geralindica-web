@@ -34,7 +34,7 @@ export function PainelLayout({ nav, subtitulo, papelLabel, foto, escuro, barraIn
       escuro
         ? ativo
           ? 'bg-ink-800 font-bold text-white'
-          : 'font-semibold text-[#9AA7A1] hover:bg-ink-800/60'
+          : 'font-semibold text-[#98A6B8] hover:bg-ink-800/60'
         : ativo
           ? 'bg-verde-50 font-bold text-verde-900'
           : 'font-semibold text-ink-600 hover:bg-ink-50',
@@ -48,7 +48,7 @@ export function PainelLayout({ nav, subtitulo, papelLabel, foto, escuro, barraIn
           escuro ? 'bg-ink-950 text-white' : 'border-r border-ink-200 bg-white',
         )}
       >
-        <Link to="/" className="px-2.5 pt-1" aria-label="Site da Indikei">
+        <Link to="/" className="px-2.5 pt-1" aria-label="Site da Geralindica">
           <Logo className={cn('text-[22px]', escuro && 'text-white')} />
         </Link>
         <span className="px-2.5 pb-4 text-[11px] font-bold uppercase tracking-[.08em] text-ink-400">{subtitulo}</span>
@@ -84,7 +84,7 @@ export function PainelLayout({ nav, subtitulo, papelLabel, foto, escuro, barraIn
         {/* Topo no celular / tablet */}
         <header className={cn('sticky top-0 z-30 lg:hidden', escuro ? 'bg-ink-950 text-white' : 'border-b border-ink-200 bg-white/95 backdrop-blur')}>
           <div className="flex items-center gap-3 px-[18px] py-3">
-            <Link to="/" aria-label="Site da Indikei">
+            <Link to="/" aria-label="Site da Geralindica">
               <Logo className={cn('text-[22px]', escuro && 'text-white')} />
             </Link>
             <span className="text-[11px] font-bold uppercase tracking-[.08em] text-ink-400">{subtitulo}</span>

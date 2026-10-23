@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 
 const TERMOS = [
-  ['O que é a Indikei', 'A Indikei é uma plataforma de agenciamento de leads e marketing que conecta indicadores (parceiros que divulgam QR Codes) a consultores habilitados que atendem clientes interessados em planos de saúde.'],
+  ['O que é a Geralindica', 'A Geralindica é uma plataforma de agenciamento de leads e marketing que conecta indicadores (parceiros que divulgam QR Codes) a consultores habilitados que atendem clientes interessados em planos de saúde.'],
   ['Natureza da relação', 'Indicadores e consultores atuam com autonomia, sem vínculo empregatício, subordinação ou exclusividade. A venda e o atendimento são feitos pelo consultor, corretor habilitado junto à SUSEP.'],
   ['Comissões', 'Do valor bruto da adesão são descontados os impostos (27,5% para PF ou a alíquota do Simples Nacional para PJ). O valor líquido é dividido 50% para o indicador e 50% para o consultor e a plataforma.'],
   ['Custódia e estorno', 'O pagamento da adesão fica em custódia até a entrevista de saúde. Se aprovado, a comissão é liberada (Verdinho). Se reprovado, o cliente recebe 100% do valor de volta e não há comissão.'],
@@ -13,7 +13,7 @@ const PRIVACIDADE = [
   ['Dados que tratamos', 'Nome, CPF ou CNPJ, telefone, e-mail e chave Pix dos usuários; dos clientes, os dados necessários para cotação e contratação do plano, incluindo dados de saúde fornecidos à Administradora.'],
   ['Quem vê o quê', 'O indicador vê apenas o primeiro nome do cliente, a data, o status e o valor da comissão. CPF, telefone, endereço e dados de saúde ficam sempre mascarados para ele. O consultor vê os dados dos próprios clientes para fazer o atendimento.'],
   ['Segurança', 'As regras de acesso são aplicadas no banco de dados (Row Level Security): cada usuário só consegue ler o que o seu papel permite, mesmo fora da interface.'],
-  ['Seus direitos (LGPD)', 'Você pode pedir acesso, correção ou exclusão dos seus dados a qualquer momento pelo e-mail privacidade@indikei.com.br.'],
+  ['Seus direitos (LGPD)', 'Você pode pedir acesso, correção ou exclusão dos seus dados a qualquer momento pelo e-mail privacidade@geralindica.com.br.'],
 ]
 
 export function Legal({ tipo }: { tipo: 'termos' | 'privacidade' }) {

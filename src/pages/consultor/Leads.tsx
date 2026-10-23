@@ -232,7 +232,7 @@ function CartaoLead({ l, sombra }: { l: LeadComOrigem; sombra?: boolean }) {
   return (
     <div
       className={cn(
-        'flex cursor-pointer flex-col gap-2 rounded-[12px] border bg-white p-3 shadow-[0_1px_2px_rgba(14,23,20,.05)] hover:shadow-md',
+        'flex cursor-pointer flex-col gap-2 rounded-[12px] border bg-white p-3 shadow-[0_1px_2px_rgba(11,26,48,.05)] hover:shadow-md',
         semCanal ? 'border-[#F2C46A]' : 'border-ink-200',
         sombra && 'rotate-2 shadow-lg',
       )}

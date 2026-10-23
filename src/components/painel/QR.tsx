@@ -7,7 +7,7 @@ export function QR({ texto, size = 96, className }: { texto: string; size?: numb
   const [svg, setSvg] = useState('')
   useEffect(() => {
     let ok = true
-    QRCode.toString(texto, { type: 'svg', margin: 0, errorCorrectionLevel: 'M', color: { dark: '#0E1714', light: '#FFFFFF00' } }).then((s) => ok && setSvg(s))
+    QRCode.toString(texto, { type: 'svg', margin: 0, errorCorrectionLevel: 'M', color: { dark: '#0B1A30', light: '#FFFFFF00' } }).then((s) => ok && setSvg(s))
     return () => {
       ok = false
     }

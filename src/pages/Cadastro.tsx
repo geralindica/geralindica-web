@@ -179,7 +179,7 @@ export function Cadastro() {
         >
           {step === 1 && (
             <div className="flex flex-col gap-5">
-              <h1 className={h1}>Como você quer usar a Indikei?</h1>
+              <h1 className={h1}>Como você quer usar a Geralindica?</h1>
               <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-[14px]" role="radiogroup" aria-label="Papel">
                 <button type="button" role="radio" aria-checked={isInd} onClick={() => setRole('ind')} className={cn(roleCard, isInd ? 'border-verde-600 bg-verde-50' : 'border-ink-200 bg-white')}>
                   <QrCode size={30} className="text-verde-700" />
@@ -350,7 +350,7 @@ export function Cadastro() {
             <div className="flex flex-col items-center gap-5 py-10 text-center" role="status">
               <div className="size-16 animate-spin rounded-full border-[5px] border-azul-bg border-t-azul-fg [animation-duration:1s]" />
               <h1 className="m-0 text-[26px] font-extrabold tracking-[-0.03em]">Assinando pelo Gov.br…</h1>
-              <p className="m-0 max-w-[420px] text-[15px] text-ink-600">Você entra com sua conta Gov.br (nível prata ou ouro) e assina o contrato. Em seguida criamos sua conta na Indikei.</p>
+              <p className="m-0 max-w-[420px] text-[15px] text-ink-600">Você entra com sua conta Gov.br (nível prata ou ouro) e assina o contrato. Em seguida criamos sua conta na Geralindica.</p>
             </div>
           )}
 

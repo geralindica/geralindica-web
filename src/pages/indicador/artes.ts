@@ -4,7 +4,7 @@ import QRCode from 'qrcode'
 export type TipoArte = 'encosto' | 'cartao' | 'story'
 
 const VERDE = '#0F9D58'
-const INK = '#0E1714'
+const INK = '#0B1A30'
 
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath()
@@ -33,16 +33,34 @@ function textoQuebrado(ctx: CanvasRenderingContext2D, texto: string, x: number, 
   return yy + altura
 }
 
+// Espaço reservado da logo (quadrado tracejado) + nome. Trocar pela logo definitiva quando existir.
 function logo(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, cor: string, alinhar: 'center' | 'left' = 'center') {
   ctx.font = `800 ${size}px Manrope, system-ui, sans-serif`
+  const w = ctx.measureText('Geralindica').width
+  const b = size * 1.15
+  const gap = size * 0.35
+  const x0 = alinhar === 'center' ? x - (b + gap + w) / 2 : x
+  const topo = y - size * 0.36 - b / 2
+
+  ctx.save()
+  ctx.strokeStyle = cor
+  ctx.globalAlpha = 0.6
+  ctx.lineWidth = Math.max(2, size * 0.05)
+  ctx.setLineDash([size * 0.12, size * 0.09])
+  roundRect(ctx, x0, topo, b, b, size * 0.25)
+  ctx.stroke()
+  ctx.setLineDash([])
   ctx.fillStyle = cor
-  const w = ctx.measureText('indikei').width
-  const x0 = alinhar === 'center' ? x - (w + size * 0.3) / 2 : x
+  ctx.font = `700 ${size * 0.26}px Manrope, system-ui, sans-serif`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText('LOGO', x0 + b / 2, topo + b / 2)
+  ctx.restore()
+
+  ctx.font = `800 ${size}px Manrope, system-ui, sans-serif`
+  ctx.fillStyle = cor
   ctx.textAlign = 'left'
-  ctx.fillText('indikei', x0, y)
-  ctx.beginPath()
-  ctx.arc(x0 + w + size * 0.17, y - size * 0.09, size * 0.13, 0, Math.PI * 2)
-  ctx.fill()
+  ctx.fillText('Geralindica', x0 + b + gap, y)
 }
 
 async function qrCanvas(link: string, px: number) {
@@ -111,7 +129,7 @@ export async function baixarArte(tipo: TipoArte, link: string, rotulo: string, c
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `indikei-${rotulo.toLowerCase().replace(/\s+/g, '-')}-${tipo}.png`
+  a.download = `geralindica-${rotulo.toLowerCase().replace(/\s+/g, '-')}-${tipo}.png`
   document.body.appendChild(a)
   a.click()
   a.remove()

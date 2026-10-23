@@ -70,7 +70,7 @@ export function Financeiro() {
     const url = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }))
     const a = document.createElement('a')
     a.href = url
-    a.download = `indikei-transacoes-${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `geralindica-transacoes-${new Date().toISOString().slice(0, 10)}.csv`
     a.click()
     setTimeout(() => URL.revokeObjectURL(url), 1500)
   }

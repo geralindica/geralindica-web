@@ -48,7 +48,7 @@ export function MeusIndicadores() {
               </div>
               <div className="grid gap-0.5" style={{ gridTemplateColumns: `repeat(${c.max_indicadores}, 1fr)` }}>
                 {Array.from({ length: c.max_indicadores }, (_, i) => (
-                  <span key={i} className="h-2.5 rounded-sm" style={{ background: i < c.ocupacao ? '#0F9D58' : '#ECF0EE' }} />
+                  <span key={i} className="h-2.5 rounded-sm" style={{ background: i < c.ocupacao ? '#0F9D58' : '#EAEFF5' }} />
                 ))}
               </div>
             </div>

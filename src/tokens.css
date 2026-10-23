@@ -1,11 +1,11 @@
-/* Indikei — design tokens (shadcn/ui compatible: HSL-free hex for clareza; converta se preferir) */
+/* Geralindica — design tokens (shadcn/ui compatible: HSL-free hex for clareza; converta se preferir) */
 :root {
   /* Marca — Verdinho */
   --verde-50:#ECF8F1; --verde-100:#D3F0E0; --verde-200:#A6E1C2; --verde-500:#1DB56B;
   --verde-600:#0F9D58; --verde-700:#0A7F47; --verde-900:#053D23;
-  /* Ink — neutro com leve tom verde */
-  --ink-950:#0E1714; --ink-800:#24302C; --ink-600:#4E5B56; --ink-400:#8A9590;
-  --ink-200:#DCE2DF; --ink-100:#ECF0EE; --ink-50:#F5F7F6; --white:#FFFFFF;
+  /* Ink — neutro azul-marinho (a logo será verde + azul) */
+  --ink-950:#0B1A30; --ink-800:#1F2E45; --ink-600:#4A5B70; --ink-400:#8494A8;
+  --ink-200:#D8E0EA; --ink-100:#EAEFF5; --ink-50:#F4F7FA; --white:#FFFFFF;
   /* Status */
   --ambar-fg:#9A5B00; --ambar-bg:#FFF3D6; --ambar-solid:#F2A516;
   --verde-fg:#0A7F47; --verde-bg:#DDF5E7; --verde-solid:#0F9D58;
@@ -29,14 +29,14 @@
   /* Raios */
   --radius-sm:8px; --radius-md:12px; --radius-lg:16px; --radius-xl:24px; --radius-full:999px;
   /* Sombras */
-  --shadow-sm:0 1px 2px rgba(14,23,20,.06);
-  --shadow-md:0 1px 2px rgba(14,23,20,.04), 0 6px 20px rgba(14,23,20,.07);
-  --shadow-lg:0 2px 4px rgba(14,23,20,.05), 0 18px 48px rgba(14,23,20,.12);
+  --shadow-sm:0 1px 2px rgba(11,26,48,.06);
+  --shadow-md:0 1px 2px rgba(11,26,48,.04), 0 6px 20px rgba(11,26,48,.07);
+  --shadow-lg:0 2px 4px rgba(11,26,48,.05), 0 18px 48px rgba(11,26,48,.12);
 }
 .dark {
-  --background:#0B1210; --foreground:#E9EFEC; --card:#131C19; --card-foreground:#E9EFEC;
-  --primary:#34D186; --primary-foreground:#04140C; --secondary:#1C2723; --muted:#1C2723;
-  --muted-foreground:#9AA7A1; --border:#25302C; --input:#25302C; --ring:#34D186;
+  --background:#0A1220; --foreground:#E8EEF6; --card:#111C2E; --card-foreground:#E8EEF6;
+  --primary:#34D186; --primary-foreground:#04140C; --secondary:#1A2638; --muted:#1A2638;
+  --muted-foreground:#98A6B8; --border:#24324A; --input:#24324A; --ring:#34D186;
   --ambar-fg:#F6C35B; --ambar-bg:#2E2208; --verde-fg:#5BE0A0; --verde-bg:#0D2B1C;
   --vermelho-fg:#F28B82; --vermelho-bg:#2E1412; --azul-fg:#8DB4F7; --azul-bg:#0F1E36;
 }
