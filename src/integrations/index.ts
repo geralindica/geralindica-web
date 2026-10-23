@@ -96,12 +96,12 @@ export async function assinarContratoGovBr(): Promise<{ assinadoEm: string }> {
 
 // ---------------- Pagamentos ----------------
 /**
- * Saque via Pix das comissões em Verdinho.
- * Hoje o banco marca como repassado na hora (Pix simulado).
- * Real: o gateway (Stripe, PicPay ou banco) faz o Pix e confirma por webhook.
+ * Pedido de saque das comissões em Verdinho.
+ * O banco cria o saque como "solicitado"; o admin confere, faz o Pix e marca como pago (Admin → Financeiro).
+ * Real: o gateway (Stripe, PicPay ou banco) faz o Pix depois da aprovação do admin e confirma por webhook.
  */
 export async function sacarViaPix() {
   const { data, error } = await supabase.rpc('solicitar_saque')
   if (error) throw error
-  return data as { id: string; valor: number; qtd: number; created_at: string }
+  return data as { id: string; valor: number; qtd: number; created_at: string; status: string }
 }

@@ -22,7 +22,7 @@ import {
 } from 'lucide-react'
 import { supabase, mensagemErro } from '@/lib/supabase'
 import { brl, cn } from '@/lib/utils'
-import { ETAPAS, corEtapa, dataBR, dataHoraBR, iniciais, mascararCPFCompleto, mascararTelefoneCompleto, nomeEtapa, primeiroNome } from '@/lib/negocio'
+import { ETAPAS, ETAPAS_COM_TRANSACAO, ETAPAS_DO_ADMIN, corEtapa, dataBR, dataHoraBR, iniciais, mascararCPFCompleto, mascararTelefoneCompleto, nomeEtapa, primeiroNome } from '@/lib/negocio'
 import type { Etapa, LeadEvento } from '@/lib/types'
 import { ALTERNATIVAS, estimarMensalidade, gerarNovaCotacao, linkWhatsApp, numeroInternacional, pedirDescontoAdministradora, reenviarCotacao, type Alternativa } from '@/integrations'
 import { Button } from '@/components/ui/button'
@@ -108,6 +108,10 @@ export function LeadDetalhe() {
   const mensal = Math.round((lead.valor_adesao ?? 0) * 0.92)
   const estimada = estimarMensalidade(mensal, alts)
   const semCanal = !lead.canal_id
+  const decididoPeloAdmin = ETAPAS_DO_ADMIN.includes(lead.etapa)
+  const valorTravado = ETAPAS_COM_TRANSACAO.includes(lead.etapa)
+  // Mesmas regras do banco (private.tg_lead_antes): resultado da entrevista e encerrar lead em custódia são do admin.
+  const soAdmin = (e: Etapa) => e !== lead.etapa && (ETAPAS_DO_ADMIN.includes(e) || (e === 'perdido' && (lead.etapa === 'custodia' || lead.etapa === 'entrevista')))
   const zap = numeroInternacional(lead.telefone)
   const ordem = ['Tipo', 'Idade', 'Profissão', 'Abrangência', 'Acomodação', 'Obstetrícia', 'Dependentes']
   const pos = (k: string) => (ordem.includes(k) ? ordem.indexOf(k) : ordem.length)
@@ -237,13 +241,14 @@ export function LeadDetalhe() {
             <select
               value={lead.etapa}
               onChange={(e) => mover.mutate(e.target.value as Etapa)}
-              disabled={mover.isPending}
+              disabled={mover.isPending || decididoPeloAdmin}
               aria-label="Mover para a etapa"
               className="h-11 rounded-[10px] border border-ink-200 bg-white px-3 text-[14px] font-bold outline-none focus:border-verde-500"
             >
               {ETAPAS.map((e) => (
-                <option key={e.id} value={e.id}>
+                <option key={e.id} value={e.id} disabled={soAdmin(e.id)}>
                   {e.nome}
+                  {soAdmin(e.id) ? ' · só o admin' : ''}
                 </option>
               ))}
             </select>
@@ -258,13 +263,13 @@ export function LeadDetalhe() {
             >
               <label className="flex flex-1 flex-col gap-1 text-[12px] font-bold text-ink-600">
                 Valor da adesão (R$)
-                <input value={valor} inputMode="decimal" onChange={(e) => setValor(e.target.value.replace(/[^\d,.]/g, ''))} className="h-10 rounded-[10px] border border-ink-200 px-3 text-[14px] font-bold text-ink-950 outline-none focus:border-verde-500" />
+                <input value={valor} inputMode="decimal" disabled={valorTravado} onChange={(e) => setValor(e.target.value.replace(/[^\d,.]/g, ''))} className="h-10 rounded-[10px] border border-ink-200 px-3 text-[14px] font-bold text-ink-950 outline-none focus:border-verde-500 disabled:bg-ink-50 disabled:text-ink-600" />
               </label>
-              <Button type="submit" variant="outline" size="sm" className="h-10" disabled={salvarValor.isPending}>
+              <Button type="submit" variant="outline" size="sm" className="h-10" disabled={salvarValor.isPending || valorTravado}>
                 Salvar
               </Button>
             </form>
-            <p className="m-0 text-[12px] leading-[1.45] text-ink-400">Contrato emitido cria a transação; pagamento fica em custódia até a entrevista; Aprovado libera a comissão (Verdinho).</p>
+            <p className="m-0 text-[12px] leading-[1.45] text-ink-400">Informe o valor antes do contrato: a partir do contrato emitido ele trava (correções só pelo admin). O pagamento fica em custódia até a entrevista; o admin marca Aprovado (Verdinho) ou Reprovado quando a Administradora confirmar.</p>
           </Card>
 
           <Card className="flex flex-col gap-3 p-[18px]">

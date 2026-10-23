@@ -13,7 +13,7 @@ export type Etapa =
   | 'reprovado'
   | 'perdido'
 
-export type StatusTx = 'pendente' | 'custodia' | 'verdinho' | 'repassado' | 'estornado'
+export type StatusTx = 'pendente' | 'custodia' | 'verdinho' | 'em_saque' | 'repassado' | 'estornado'
 
 export type Profile = {
   id: string
@@ -118,7 +118,8 @@ export type Canal = {
   created_at: string
 }
 
-export type Saque = { id: string; indicador_id: string; valor: number; qtd: number; created_at: string }
+export type StatusSaque = 'solicitado' | 'pago' | 'recusado'
+export type Saque = { id: string; indicador_id: string; valor: number; qtd: number; created_at: string; status: StatusSaque; decidido_em: string | null; motivo: string | null }
 
 export type ConfigSplit = {
   id: number

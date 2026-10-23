@@ -17,7 +17,7 @@ import {
 import { Loader2, MessageCirclePlus, RefreshCw, Search, Send, User } from 'lucide-react'
 import { supabase, mensagemErro } from '@/lib/supabase'
 import { brl, cn } from '@/lib/utils'
-import { ETAPAS, nomeEtapa, tempoDesde, ETAPAS_FINAIS, formatarTelefone } from '@/lib/negocio'
+import { ETAPAS, ETAPAS_DO_ADMIN, nomeEtapa, tempoDesde, ETAPAS_FINAIS, formatarTelefone } from '@/lib/negocio'
 import type { Etapa, LeadComOrigem } from '@/lib/types'
 import { linkWhatsApp, numeroInternacional, reengajarLead } from '@/integrations'
 import { Button } from '@/components/ui/button'
@@ -99,7 +99,6 @@ function Kanban({ leads }: { leads: LeadComOrigem[] }) {
   const qc = useQueryClient()
   const toast = useToast()
   const [arrastando, setArrastando] = useState<LeadComOrigem | null>(null)
-  const [confirmar, setConfirmar] = useState<{ lead: LeadComOrigem; etapa: Etapa } | null>(null)
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 220, tolerance: 8 } }),
@@ -130,8 +129,9 @@ function Kanban({ leads }: { leads: LeadComOrigem[] }) {
     const lead = ev.active.data.current?.lead as LeadComOrigem | undefined
     const etapa = ev.over?.id as Etapa | undefined
     if (!lead || !etapa || etapa === lead.etapa) return
-    if (etapa === 'aprovado' || etapa === 'reprovado') setConfirmar({ lead, etapa })
-    else mover.mutate({ id: lead.id, etapa })
+    if (etapa === 'aprovado' || etapa === 'reprovado' || ETAPAS_DO_ADMIN.includes(lead.etapa))
+      return toast('O resultado da entrevista (Verdinho ou reprovado) é marcado pelo admin, depois da confirmação da Administradora.', 'erro')
+    mover.mutate({ id: lead.id, etapa })
   }
 
   const colunas = ETAPAS.filter((e) => e.kanban)
@@ -145,35 +145,7 @@ function Kanban({ leads }: { leads: LeadComOrigem[] }) {
         </div>
         <DragOverlay>{arrastando && <CartaoLead l={arrastando} sombra />}</DragOverlay>
       </DndContext>
-      <p className="m-0 text-[12px] text-ink-400">Arraste os cards entre as colunas (no celular, segure o card antes de arrastar). Aprovados e reprovados aparecem por 30 dias.</p>
-
-      <Modal aberto={!!confirmar} onFechar={() => setConfirmar(null)} titulo={confirmar?.etapa === 'aprovado' ? 'Confirmar aprovação?' : 'Confirmar reprovação?'} sheetNoMobile={false}>
-        {confirmar && (
-          <div className="flex flex-col gap-4">
-            <p className="m-0 text-[14px] leading-[1.55] text-ink-800">
-              {confirmar.etapa === 'aprovado'
-                ? `A Administradora aprovou a entrevista de saúde de ${confirmar.lead.nome}? O status vira Verdinho ✓ e a comissão do indicador fica liberada para saque.`
-                : `${confirmar.lead.nome} foi reprovado(a) na entrevista de saúde? O valor da adesão é estornado 100% ao cliente e não há comissão.`}
-            </p>
-            <div className="flex gap-2">
-              <Button variant="outline" size="form" className="flex-1" onClick={() => setConfirmar(null)}>
-                Cancelar
-              </Button>
-              <Button
-                variant={confirmar.etapa === 'aprovado' ? 'primary' : 'dark'}
-                size="form"
-                className={cn('flex-1 font-extrabold', confirmar.etapa === 'reprovado' && 'bg-vermelho-fg hover:bg-vermelho-fg/90')}
-                onClick={() => {
-                  mover.mutate({ id: confirmar.lead.id, etapa: confirmar.etapa })
-                  setConfirmar(null)
-                }}
-              >
-                {confirmar.etapa === 'aprovado' ? 'Aprovar (Verdinho)' : 'Reprovar e estornar'}
-              </Button>
-            </div>
-          </div>
-        )}
-      </Modal>
+      <p className="m-0 text-[12px] text-ink-400">Arraste os cards entre as colunas (no celular, segure o card antes de arrastar). Aprovado e reprovado são marcados pelo admin e aparecem por 30 dias.</p>
     </>
   )
 }

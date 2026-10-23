@@ -81,7 +81,7 @@ export function useDashboard() {
         supabase.from('leads').select('id', { count: 'exact', head: true }).eq('consultor_id', me).eq('etapa', 'aprovado').gte('updated_at', inicioMes),
         supabase.from('leads').select('id', { count: 'exact', head: true }).eq('consultor_id', me).eq('etapa', 'aprovado').gte('updated_at', inicioMesAnt).lt('updated_at', mesmoDiaMesAnt),
         supabase.from('leads').select('created_at').eq('consultor_id', me).gte('created_at', desde30).limit(2000),
-        supabase.from('transacoes').select('status, bruto, created_at').in('status', ['custodia', 'verdinho', 'repassado']).gte('created_at', inicioMesAnt).limit(2000),
+        supabase.from('transacoes').select('status, bruto, created_at').in('status', ['custodia', 'verdinho', 'em_saque', 'repassado']).gte('created_at', inicioMesAnt).limit(2000),
       ])
       for (const r of [mes, mesAnt, porDia, tx]) if (r.error) throw r.error
 

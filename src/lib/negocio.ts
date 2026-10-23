@@ -97,6 +97,10 @@ export const ETAPAS: { id: Etapa; nome: string; dot: string; bg: string; kanban:
 ]
 export const nomeEtapa = (e: Etapa) => ETAPAS.find((x) => x.id === e)?.nome ?? e
 export const ETAPAS_FINAIS: Etapa[] = ['aprovado', 'reprovado', 'perdido']
+/** Resultado da entrevista: só o admin marca (o banco também bloqueia). */
+export const ETAPAS_DO_ADMIN: Etapa[] = ['aprovado', 'reprovado']
+/** A partir do contrato emitido existe transação e o valor da adesão trava. */
+export const ETAPAS_COM_TRANSACAO: Etapa[] = ['contrato', 'custodia', 'entrevista', 'aprovado', 'reprovado']
 
 /** Cores do selo de etapa (detalhe do lead / painel). */
 export function corEtapa(e: Etapa) {
@@ -113,6 +117,7 @@ export const STATUS_TX: Record<StatusTx, { label: string; bg: string; fg: string
   pendente: { label: 'Pendente', bg: '#FFFBF0', fg: '#9A5B00', border: '1px dashed #F2A516', avBg: '#FFF3D6', avFg: '#9A5B00', nota: 'Aguardando o cliente pagar a adesão. Sem valor em custódia ainda.', notaBg: '#FFFBF0' },
   custodia: { label: 'Em custódia', bg: '#FFF3D6', fg: '#9A5B00', border: '0', avBg: '#FFF3D6', avFg: '#9A5B00', nota: 'Pagamento recebido e bloqueado até a entrevista de saúde. Se aprovado, vira Verdinho.', notaBg: '#FFF3D6' },
   verdinho: { label: 'Verdinho ✓', bg: '#0F9D58', fg: '#fff', border: '0', avBg: '#ECF8F1', avFg: '#0A7F47', nota: 'Entrevista aprovada. Comissão liberada para saque.', notaBg: '#ECF8F1' },
+  em_saque: { label: 'Saque solicitado', bg: '#E7EFFC', fg: '#1F5BBF', border: '0', avBg: '#E7EFFC', avFg: '#1F5BBF', nota: 'Saque pedido. O admin confere e envia o Pix.', notaBg: '#E7EFFC' },
   repassado: { label: 'Verdinho · pago', bg: '#ECF8F1', fg: '#0A7F47', border: '0', avBg: '#EAEFF5', avFg: '#4A5B70', nota: 'Comissão já transferida via Pix.', notaBg: '#ECF8F1' },
   estornado: { label: 'Estornado', bg: '#FCEAE8', fg: '#B3372F', border: '0', avBg: '#FCEAE8', avFg: '#B3372F', nota: 'Cliente reprovado na entrevista de saúde. Valor estornado 100% ao cliente; não há comissão.', notaBg: '#FCEAE8' },
 }

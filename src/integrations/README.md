@@ -10,6 +10,6 @@ Tudo o que depende de serviços de terceiros passa por `src/integrations/index.t
 | Cotaí | `gerarNovaCotacao` | Estima a mensalidade localmente e registra o envio | Login com as credenciais da corretora e geração do PDF (em Edge Function, nunca no navegador) |
 | Administradora | `pedirDescontoAdministradora` | Marca o lead com desconto "solicitado" | E-mail/API da Administradora |
 | Gov.br | `assinarContratoGovBr` | Simula o retorno e grava a data de assinatura | Credenciamento no Assinador Gov.br |
-| Pix / gateway | `sacarViaPix` → `solicitar_saque()` | Marca as comissões como repassadas na hora | Gateway (Stripe, PicPay ou banco) + webhook de confirmação |
+| Pix / gateway | `sacarViaPix` → `solicitar_saque()` | Cria o pedido de saque; o admin faz o Pix e marca como pago no Financeiro | Gateway (Stripe, PicPay ou banco) + webhook de confirmação |
 
 Credenciais de serviços (Cotaí, Meta, gateway) **nunca** vão para o front-end: devem ficar em Supabase Edge Functions com secrets.

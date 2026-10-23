@@ -78,7 +78,7 @@ export function useSaques() {
 
 export function totaisExtrato(itens: ExtratoItem[] | undefined) {
   const soma = (st: string) => (itens ?? []).filter((e) => e.status === st).reduce((a, e) => a + e.comissao, 0)
-  return { liberado: soma('verdinho'), custodia: soma('custodia'), pago: soma('repassado'), pendente: soma('pendente') }
+  return { liberado: soma('verdinho'), emSaque: soma('em_saque'), custodia: soma('custodia'), pago: soma('repassado'), pendente: soma('pendente') }
 }
 
 export const linkCanal = (codigo: string) => `${window.location.origin}/q/${codigo}`

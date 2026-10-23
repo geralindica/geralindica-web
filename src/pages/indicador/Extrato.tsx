@@ -7,7 +7,7 @@ import { useExtrato } from './dados'
 
 const FILTROS: { k: string; label: string; st: StatusTx[] | null }[] = [
   { k: 'todos', label: 'Todos', st: null },
-  { k: 'verdinho', label: 'Verdinho', st: ['verdinho', 'repassado'] },
+  { k: 'verdinho', label: 'Verdinho', st: ['verdinho', 'em_saque', 'repassado'] },
   { k: 'custodia', label: 'Em custódia', st: ['custodia'] },
   { k: 'pendente', label: 'Pendente', st: ['pendente'] },
   { k: 'estornado', label: 'Estornado', st: ['estornado'] },

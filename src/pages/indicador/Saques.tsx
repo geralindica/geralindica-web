@@ -1,13 +1,13 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowDownLeft, Check, Loader2, Lock, Receipt, Zap } from 'lucide-react'
+import { ArrowDownLeft, Check, Clock, Loader2, Lock, Receipt, Undo2, Zap } from 'lucide-react'
 import { supabase, mensagemErro } from '@/lib/supabase'
 import { useAuth, usePerfil } from '@/auth/AuthProvider'
 import { useConfig } from '@/data/queries'
 import { sacarViaPix } from '@/integrations'
 import { brl } from '@/lib/utils'
-import { dataBR, pct } from '@/lib/negocio'
-import type { TipoPessoa } from '@/lib/types'
+import { cnpjValido, dataBR, formatarCNPJ, pct } from '@/lib/negocio'
+import type { Saque, TipoPessoa } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/form'
 import { Card, Segmentado } from '@/components/painel/comum'
@@ -25,6 +25,8 @@ export function Saques() {
   const [editPix, setEditPix] = useState(false)
   const [chave, setChave] = useState(p.chave_pix ?? '')
   const [ultimo, setUltimo] = useState<number | null>(null)
+  const [pedirCnpj, setPedirCnpj] = useState(false)
+  const [cnpj, setCnpj] = useState('')
   const t = totaisExtrato(extrato.data)
 
   const sacar = useMutation({
@@ -32,19 +34,20 @@ export function Saques() {
     onSuccess: (s) => {
       setUltimo(Number(s.valor))
       qc.invalidateQueries({ queryKey: ['ind'] })
-      toast(`Pix de ${brl(Number(s.valor))} enviado.`)
+      toast(`Pedido de saque de ${brl(Number(s.valor))} enviado. O admin confere e faz o Pix.`)
     },
     onError: (e) => toast(mensagemErro(e), 'erro'),
   })
 
   const salvarPerfil = useMutation({
-    mutationFn: async (dados: { tipo_pessoa?: TipoPessoa; chave_pix?: string }) => {
+    mutationFn: async (dados: { tipo_pessoa?: TipoPessoa; documento?: string; chave_pix?: string }) => {
       const { error } = await supabase.from('profiles').update(dados).eq('id', p.id)
       if (error) throw error
     },
     onSuccess: async () => {
       await refreshProfile()
       setEditPix(false)
+      setPedirCnpj(false)
       toast('Dados de recebimento atualizados.')
     },
     onError: (e) => toast(mensagemErro(e), 'erro'),
@@ -66,8 +69,9 @@ export function Saques() {
           className="flex h-[50px] cursor-pointer items-center justify-center gap-2 rounded-[14px] bg-white text-[15px] font-extrabold text-verde-900 disabled:cursor-not-allowed disabled:opacity-70"
         >
           {sacar.isPending ? <Loader2 size={20} className="animate-spin" /> : ultimo && t.liberado <= 0 ? <Check size={20} /> : <Zap size={20} />}
-          {ultimo && t.liberado <= 0 ? 'Pix enviado · cai em segundos' : t.liberado > 0 ? 'Sacar via Pix' : 'Nada liberado para saque'}
+          {ultimo && t.liberado <= 0 ? 'Pedido enviado · aguardando o admin' : t.liberado > 0 ? 'Pedir saque via Pix' : 'Nada liberado para saque'}
         </button>
+        {t.emSaque > 0 && <span className="text-[13px] font-semibold text-verde-100">{brl(t.emSaque)} em pedido de saque, aguardando o admin enviar o Pix.</span>}
         {t.custodia > 0 && <span className="text-[13px] font-semibold text-verde-100">+ {brl(t.custodia)} em custódia, liberados após a entrevista de saúde.</span>}
       </div>
 
@@ -80,7 +84,11 @@ export function Saques() {
         </div>
         <Segmentado
           valor={p.tipo_pessoa}
-          onChange={(v) => v !== p.tipo_pessoa && salvarPerfil.mutate({ tipo_pessoa: v })}
+          onChange={(v) => {
+            if (v === p.tipo_pessoa) return
+            if (v === 'PJ') return setCnpj(p.documento && cnpjValido(p.documento) ? formatarCNPJ(p.documento) : ''), setPedirCnpj(true)
+            salvarPerfil.mutate({ tipo_pessoa: v })
+          }}
           opcoes={[
             { v: 'PF', label: 'Pessoa física' },
             { v: 'PJ', label: 'Pessoa jurídica' },
@@ -102,7 +110,7 @@ export function Saques() {
               : `PF: ${pct(config.data.aliquota_pf)} de imposto é retido sobre o valor bruto antes do split. O valor que você vê já é líquido, sem nota fiscal.`}
           </div>
         )}
-        <p className="m-0 text-[12px] text-ink-400">A mudança PF/PJ vale para as próximas adesões; contratos já emitidos mantêm a alíquota original.</p>
+        <p className="m-0 text-[12px] text-ink-400">A mudança PF/PJ vale para as próximas adesões; contratos já emitidos mantêm a alíquota original. Para PJ é preciso um CNPJ válido.</p>
       </Card>
 
       <div className="flex flex-col gap-2.5">
@@ -113,13 +121,12 @@ export function Saques() {
           <Card className="overflow-hidden">
             {saques.data.map((s) => (
               <div key={s.id} className="flex items-center gap-3 border-b border-ink-100 px-4 py-3.5 last:border-b-0">
-                <span className="flex size-[38px] shrink-0 items-center justify-center rounded-[12px] bg-verde-50 text-verde-700">
-                  <ArrowDownLeft size={20} />
-                </span>
+                <span className={`flex size-[38px] shrink-0 items-center justify-center rounded-[12px] ${SAQUE[s.status].icone}`}>{SAQUE[s.status].simbolo}</span>
                 <div className="flex-1">
-                  <div className="text-[14px] font-bold">Pix enviado</div>
+                  <div className="text-[14px] font-bold">{SAQUE[s.status].titulo}</div>
                   <div className="text-[12px] text-ink-600">
                     {dataBR(s.created_at)} · {s.qtd} {s.qtd === 1 ? 'comissão' : 'comissões'}
+                    {s.status === 'recusado' && s.motivo && ` · ${s.motivo}`}
                   </div>
                 </div>
                 <span className="text-[15px] font-extrabold">{brl(s.valor)}</span>
@@ -127,9 +134,26 @@ export function Saques() {
             ))}
           </Card>
         ) : (
-          <Vazio titulo="Nenhum saque ainda" texto="Quando uma comissão virar Verdinho, é só tocar em Sacar via Pix." />
+          <Vazio titulo="Nenhum saque ainda" texto="Quando uma comissão virar Verdinho, é só tocar em Pedir saque via Pix." />
         )}
       </div>
+
+      <Modal aberto={pedirCnpj} onFechar={() => setPedirCnpj(false)} titulo="Receber como PJ" sheetNoMobile={false}>
+        <form
+          className="flex flex-col gap-4"
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (!cnpjValido(cnpj)) return toast('Informe um CNPJ válido.', 'erro')
+            salvarPerfil.mutate({ tipo_pessoa: 'PJ', documento: cnpj.replace(/\D/g, '') })
+          }}
+        >
+          <Field label="CNPJ da empresa" value={cnpj} onChange={(e) => setCnpj(formatarCNPJ(e.target.value))} autoFocus inputMode="numeric" placeholder="00.000.000/0000-00" />
+          <p className="m-0 text-[12px] text-ink-600">Como PJ, você emite nota fiscal para a Geralindica antes de cada saque, e a chave Pix precisa estar neste CNPJ.</p>
+          <Button type="submit" variant="primary" size="form" disabled={salvarPerfil.isPending}>
+            Confirmar PJ
+          </Button>
+        </form>
+      </Modal>
 
       <Modal aberto={editPix} onFechar={() => setEditPix(false)} titulo="Chave Pix" sheetNoMobile={false}>
         <form
@@ -149,4 +173,10 @@ export function Saques() {
       </Modal>
     </>
   )
+}
+
+const SAQUE: Record<Saque['status'], { titulo: string; icone: string; simbolo: ReactNode }> = {
+  solicitado: { titulo: 'Saque solicitado · aguardando o admin', icone: 'bg-azul-bg text-azul-fg', simbolo: <Clock size={20} /> },
+  pago: { titulo: 'Pix enviado', icone: 'bg-verde-50 text-verde-700', simbolo: <ArrowDownLeft size={20} /> },
+  recusado: { titulo: 'Saque recusado', icone: 'bg-vermelho-bg text-vermelho-fg', simbolo: <Undo2 size={20} /> },
 }

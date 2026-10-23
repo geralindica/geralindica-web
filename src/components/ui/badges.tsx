@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Clock, Lock, Undo2 } from 'lucide-react'
+import { Clock, Lock, Send, Undo2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CheckCircleFilled } from '@/components/icons'
 import { STATUS_TX } from '@/lib/negocio'
@@ -19,6 +19,7 @@ const statusIcon: Record<StatusTx, ReactNode> = {
   pendente: <Clock size={13} strokeWidth={2.5} />,
   custodia: <Lock size={13} strokeWidth={2.5} />,
   verdinho: <CheckCircleFilled size={13} />,
+  em_saque: <Send size={13} strokeWidth={2.5} />,
   repassado: <CheckCircleFilled size={13} />,
   estornado: <Undo2 size={13} strokeWidth={2.5} />,
 }
