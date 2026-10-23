@@ -15,7 +15,8 @@ const DEMO = import.meta.env.DEV
       { label: 'Admin', email: 'admin@demo.indikei.com.br', cor: 'bg-ink-800 hover:bg-ink-950' },
     ]
   : []
-const DEMO_SENHA = import.meta.env.DEV ? 'indikei-demo-2026' : ''
+// Senha das contas de demonstração: só no .env.local (VITE_DEMO_SENHA), nunca no código.
+const DEMO_SENHA = import.meta.env.DEV ? (import.meta.env.VITE_DEMO_SENHA ?? '') : ''
 
 export function Login() {
   const { session, profile } = useAuth()

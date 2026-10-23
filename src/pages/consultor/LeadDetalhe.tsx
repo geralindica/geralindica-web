@@ -89,7 +89,7 @@ export function LeadDetalhe() {
     const { error } = await supabase.from('lead_eventos').insert({ lead_id: id!, tipo: 'nota', texto })
     if (error) throw error
   }, () => 'Anotação salva no histórico.')
-  const reenviar = useAcao(id, async (_: void) => reenviarCotacao(id!), () => 'Cotação reenviada no WhatsApp.')
+  const reenviar = useAcao(id, async () => reenviarCotacao(id!), () => 'Cotação reenviada no WhatsApp.')
   const novaCot = useAcao(id, (txt: string) => gerarNovaCotacao(id!, alts, txt), () => 'Nova cotação enviada ao cliente.')
   const pedirDesc = useAcao(id, (pct: number) => pedirDescontoAdministradora(id!, pct), (p) => `Pedido de ${p}% enviado à Administradora.`)
 

@@ -85,10 +85,10 @@ export async function gerarArte(tipo: TipoArte, link: string, rotulo: string, co
 
   if (tipo === 'cartao') {
     ctx.font = '800 64px Manrope, system-ui, sans-serif'
-    let y = textoQuebrado(ctx, 'Plano de saúde sem fila de corretor', 70, 150, 520, 74, 'left')
+    const y = textoQuebrado(ctx, 'Plano de saúde sem fila de corretor', 70, 150, 520, 74, 'left')
     ctx.font = '600 30px Manrope, system-ui, sans-serif'
     ctx.globalAlpha = 0.92
-    y = textoQuebrado(ctx, 'Aponte a câmera e receba sua cotação no WhatsApp.', 70, y + 20, 500, 40, 'left')
+    textoQuebrado(ctx, 'Aponte a câmera e receba sua cotação no WhatsApp.', 70, y + 20, 500, 40, 'left')
     ctx.globalAlpha = 1
     logo(ctx, 70, H - 70, 52, '#fff', 'left')
     const q = 380

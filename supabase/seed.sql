@@ -1,7 +1,10 @@
--- Indikei · dados de demonstração
--- Cria contas de teste (senha de todas: indikei-demo-2026), consultores da vitrine,
+-- Geralindica · dados de demonstração
+-- Cria contas de teste, consultores da vitrine,
 -- indicadores, histórico de leads/transações e os leads de exemplo do protótipo.
 -- Rodar uma vez num banco recém-migrado.
+-- Antes, defina a senha das contas de teste na mesma sessão (não grave a senha aqui):
+--   set seed.demo_senha = '<senha>';
+-- e coloque a mesma senha em VITE_DEMO_SENHA no .env.local.
 --
 -- Contas principais:
 --   admin@demo.indikei.com.br          (Plataforma · admin)
@@ -16,7 +19,7 @@ begin
     raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
     confirmation_token, recovery_token, email_change_token_new, email_change)
   values ('00000000-0000-0000-0000-000000000000', v_id, 'authenticated', 'authenticated', p_email,
-    crypt('indikei-demo-2026', gen_salt('bf', 6)), now(),
+    crypt(current_setting('seed.demo_senha'), gen_salt('bf', 6)), now(),
     '{"provider":"email","providers":["email"]}', p_meta, now(), now(), '', '', '', '');
   insert into auth.identities (id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
   values (gen_random_uuid(), v_id, v_id::text,
