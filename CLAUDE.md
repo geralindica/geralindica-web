@@ -10,6 +10,7 @@ Plataforma de indicações de planos de saúde ("Hotmart das indicações"). Só
 
 ## Regras de negócio (não quebrar)
 - **Verdinho**: transação nasce em `contrato`; `custodia`/`entrevista` = em custódia; `aprovado` = verdinho; `reprovado` = estorno 100%; `repassado` trava a etapa. Tudo em `private.tg_lead_depois`.
+- **Quem decide o dinheiro** (auditoria 23/10/2026, `private.tg_lead_antes`): só o admin marca `aprovado`/`reprovado` (`admin_resultado_entrevista`); o valor da adesão trava a partir do contrato (`admin_corrigir_valor`); saque é pedido: `solicitar_saque` deixa as comissões `em_saque` e o admin paga ou recusa (`admin_pagar_saque`/`admin_recusar_saque`). `confirmar_atribuicao` só aceita indicadores do próprio consultor; PJ só com CNPJ válido. Qualquer mudança de banco: rodar `npm run test:banco` antes.
 - **Split**: `calcularSplit()` em `src/lib/negocio.ts` e a mesma fórmula nas funções SQL (`round(bruto*(1-aliquota/100)*pct/100, 2)`). Nunca escrever valor de comissão à mão no JSX.
 - **LGPD**: indicador nunca lê `leads`; só `extrato_indicador()`/`funil_indicador()`/`canais_resumo()`. Dados do cliente sempre mascarados para ele.
 - **Vagas**: máx. 30 por consultor (`private.tg_indicador_vaga`). Portabilidade só para quem tem vaga.
