@@ -120,7 +120,7 @@ function Simulador() {
   const [ticket, setTicket] = useState(1000)
   const cfg = useConfig()
   const per = cfg.data ? calcularSplit(ticket, cfg.data.aliquota_pf, cfg.data.pct_indicador, cfg.data.pct_consultor_restante).indicador : 0
-  const semImposto = cfg.data?.aliquota_pf == null
+  const semImposto = !!cfg.data && cfg.data.aliquota_pf == null
 
   return (
     <section className="mx-auto grid max-w-[1200px] grid-cols-[repeat(auto-fit,minmax(min(100%,420px),1fr))] items-center gap-12 px-7 py-[88px]">
@@ -153,10 +153,10 @@ function Simulador() {
         <div className="flex flex-col gap-1.5 rounded-[20px] bg-ink-950 p-6 text-white" aria-live="polite">
           <span className="text-[14px] font-semibold text-verde-200">Você ganha aproximadamente</span>
           <span className="text-[44px] font-extrabold leading-[1.05] tracking-[-0.045em] sm:text-[52px]">
-            {brl(per * n)}
+            {cfg.data ? brl(per * n) : '—'}
             <span className="text-[18px] tracking-normal opacity-60"> /mês</span>
           </span>
-          <span className="text-[13px] text-ink-400">{brl(per)} por adesão aprovada</span>
+          <span className="text-[13px] text-ink-400">{cfg.data ? `${brl(per)} por adesão aprovada` : 'Simulação indisponível no momento'}</span>
         </div>
       </div>
     </section>
@@ -167,6 +167,7 @@ function Split() {
   const cfg = useConfig()
   const c = cfg.data
   const r = c ? calcularSplit(1000, c.aliquota_pf, c.pct_indicador, c.pct_consultor_restante) : null
+  const v = (x: number | undefined) => (x == null ? '—' : brl(x))
   return (
     <section className="bg-ink-950 text-white">
       <div className="mx-auto grid max-w-[1200px] grid-cols-[repeat(auto-fit,minmax(min(100%,420px),1fr))] items-center gap-14 px-7 py-[88px]">
@@ -184,13 +185,13 @@ function Split() {
             <span className="font-bold">{brl(1000)}</span>
           </div>
           <div className="flex justify-between text-[15px]">
-            <span className="text-ink-600">{c?.aliquota_pf == null ? 'Imposto (a definir)' : `Imposto (${pct(c.aliquota_pf)} PF)`}</span>
-            <span className="font-bold text-vermelho-fg">− {brl(r?.imposto ?? 0)}</span>
+            <span className="text-ink-600">{!c ? 'Imposto' : c.aliquota_pf == null ? 'Imposto (a definir)' : `Imposto (${pct(c.aliquota_pf)} PF)`}</span>
+            <span className="font-bold text-vermelho-fg">− {v(r?.imposto)}</span>
           </div>
           <div className="border-t border-dashed border-ink-200" />
           <div className="flex justify-between text-[16px]">
             <span className="font-bold">Valor líquido</span>
-            <span className="font-extrabold">{brl(r?.liquido ?? 0)}</span>
+            <span className="font-extrabold">{v(r?.liquido)}</span>
           </div>
           <div className="my-1.5 flex h-3 gap-[3px] overflow-hidden rounded-full">
             <div className="bg-verde-600" style={{ flex: r?.indicador || 1 }} />
@@ -199,11 +200,11 @@ function Split() {
           <div className="grid grid-cols-2 gap-[10px]">
             <div className="rounded-[14px] bg-verde-50 p-[14px]">
               <div className="text-[12px] font-bold text-verde-700">{c ? pct(c.pct_indicador) : ''} Indicador</div>
-              <div className="text-[20px] font-extrabold text-verde-900 sm:text-[24px]">{brl(r?.indicador ?? 0)}</div>
+              <div className="text-[20px] font-extrabold text-verde-900 sm:text-[24px]">{v(r?.indicador)}</div>
             </div>
             <div className="rounded-[14px] bg-ink-50 p-[14px]">
               <div className="text-[12px] font-bold text-ink-600">Consultor + Geralindica</div>
-              <div className="text-[20px] font-extrabold sm:text-[24px]">{brl(r?.resto ?? 0)}</div>
+              <div className="text-[20px] font-extrabold sm:text-[24px]">{v(r?.resto)}</div>
             </div>
           </div>
         </div>

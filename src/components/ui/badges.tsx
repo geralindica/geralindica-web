@@ -40,6 +40,7 @@ export function StatusBadge({ status, size = 'sm', label }: { status: StatusVend
 
 /** Temperatura (reputação) do consultor: número de 0 a 100 + faixa Fria/Morna/Quente. */
 export function TemperaturaBadge({ valor, small }: { valor: number; small?: boolean }) {
+  if (typeof valor !== 'number') return null // banco ainda sem a coluna (migração não aplicada)
   const f = faixaTemperatura(valor)
   return (
     <span
