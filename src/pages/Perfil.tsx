@@ -3,7 +3,7 @@ import { ArrowLeft, MapPin } from 'lucide-react'
 import { useAvaliacoes, useConsultores } from '@/data/queries'
 import { useAuth } from '@/auth/AuthProvider'
 import { dataBR } from '@/lib/negocio'
-import { HotBadge, Pill, TopBadge } from '@/components/ui/badges'
+import { HotBadge, Pill, TemperaturaBadge, TopBadge } from '@/components/ui/badges'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { VagasBar } from '@/components/VagasBar'
 import { Avatar } from '@/components/painel/comum'
@@ -35,7 +35,7 @@ export function Perfil() {
     { v: c.nota ? String(c.nota).replace('.', ',') : '–', l: 'avaliação' },
   ]
   const ehIndicadorLogado = profile?.papel === 'indicador'
-  const longBio = `${c.bio ?? ''} Trabalho com as principais operadoras e acompanho cada cliente até a entrevista de saúde, para que a comissão chegue no verdinho sem surpresa.`.trim()
+  const longBio = `${c.bio ?? ''} Trabalho com as principais operadoras e acompanho cada cliente até a entrevista de saúde, e faço os Pix dos meus indicadores em dia.`.trim()
 
   return (
     <main className="mx-auto flex w-full max-w-[1100px] flex-col gap-6 px-4 pb-24 pt-8 sm:px-7">
@@ -50,6 +50,7 @@ export function Perfil() {
             <Avatar nome={c.nome_exibicao} foto={c.foto_url} size={104} rounded="xl" className="rounded-[28px]" />
             <div className="flex flex-col gap-1.5">
               <div className="flex flex-wrap gap-1.5">
+                <TemperaturaBadge valor={c.temperatura} />
                 <Pill className="bg-ink-100 font-extrabold">#{c.rank} no ranking</Pill>
                 {c.hot && <HotBadge />}
                 {c.top && <TopBadge />}

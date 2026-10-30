@@ -1,31 +1,33 @@
 import { useState } from 'react'
-import type { ExtratoItem, StatusTx } from '@/lib/types'
+import { useConfig } from '@/data/queries'
+import type { StatusVenda, VendaIndicador } from '@/lib/types'
 import { Chip } from '@/components/ui/form'
-import { Card, LinhaExtrato, ReciboSplit, SeloLGPD, TituloPagina } from '@/components/painel/comum'
+import { AvisoPagamento, Card, DetalheVenda, LinhaVenda, SeloLGPD, TituloPagina } from '@/components/painel/comum'
 import { Carregando, ErroBox, Modal, Vazio } from '@/components/ui/feedback'
-import { useExtrato } from './dados'
+import { useVendas } from './dados'
 
-const FILTROS: { k: string; label: string; st: StatusTx[] | null }[] = [
-  { k: 'todos', label: 'Todos', st: null },
-  { k: 'verdinho', label: 'Verdinho', st: ['verdinho', 'repassado'] },
-  { k: 'custodia', label: 'Em custódia', st: ['custodia'] },
-  { k: 'pendente', label: 'Pendente', st: ['pendente'] },
-  { k: 'estornado', label: 'Estornado', st: ['estornado'] },
+const FILTROS: { k: string; label: string; st: StatusVenda | null }[] = [
+  { k: 'todos', label: 'Todas', st: null },
+  { k: 'aprovado', label: 'Verdinho', st: 'aprovado' },
+  { k: 'aguardando', label: 'Aguardando entrevista', st: 'aguardando_entrevista' },
+  { k: 'reprovado', label: 'Reprovadas', st: 'reprovado' },
 ]
 
 export function Extrato() {
-  const extrato = useExtrato()
+  const vendas = useVendas()
+  const config = useConfig()
   const [filtro, setFiltro] = useState('todos')
-  const [recibo, setRecibo] = useState<ExtratoItem | null>(null)
+  const [aberta, setAberta] = useState<VendaIndicador | null>(null)
   const f = FILTROS.find((x) => x.k === filtro)!
-  const itens = (extrato.data ?? []).filter((e) => !f.st || f.st.includes(e.status))
+  const itens = (vendas.data ?? []).filter((v) => !f.st || v.status === f.st)
 
   return (
     <>
       <div>
-        <TituloPagina titulo="Extrato" />
-        <div className="text-[14px] text-ink-600">Toque em uma comissão para ver o recibo do split.</div>
+        <TituloPagina titulo="Minhas vendas" />
+        <div className="text-[14px] text-ink-600">Vendas que o seu consultor registrou com os seus códigos. Toque para ver o detalhe.</div>
       </div>
+      <AvisoPagamento />
       <div className="-mx-[18px] flex gap-1.5 overflow-x-auto px-[18px] pb-0.5 sm:mx-0 sm:px-0">
         {FILTROS.map((x) => (
           <Chip key={x.k} active={filtro === x.k} onClick={() => setFiltro(x.k)} className="inline-flex h-9 shrink-0 items-center rounded-full px-3.5 text-[13px]">
@@ -33,22 +35,22 @@ export function Extrato() {
           </Chip>
         ))}
       </div>
-      {extrato.isLoading ? (
+      {vendas.isLoading ? (
         <Carregando />
-      ) : extrato.error ? (
-        <ErroBox erro={extrato.error} onRetry={() => extrato.refetch()} />
+      ) : vendas.error ? (
+        <ErroBox erro={vendas.error} onRetry={() => vendas.refetch()} />
       ) : itens.length ? (
         <Card className="overflow-hidden">
-          {itens.map((e) => (
-            <LinhaExtrato key={e.transacao_id} e={e} onClick={() => setRecibo(e)} />
+          {itens.map((v) => (
+            <LinhaVenda key={v.venda_id} v={v} onClick={() => setAberta(v)} />
           ))}
         </Card>
       ) : (
-        <Vazio titulo="Nada por aqui" texto={filtro === 'todos' ? 'Suas comissões aparecem aqui assim que um cliente fechar contrato.' : 'Nenhuma comissão com esse status.'} />
+        <Vazio titulo="Nada por aqui" texto={filtro === 'todos' ? 'As vendas aparecem aqui quando o consultor registrar um cliente que veio pelo seu QR Code.' : 'Nenhuma venda com esse status.'} />
       )}
       <SeloLGPD />
-      <Modal aberto={!!recibo} onFechar={() => setRecibo(null)} titulo="Recibo do split">
-        {recibo && <ReciboSplit e={recibo} />}
+      <Modal aberto={!!aberta} onFechar={() => setAberta(null)} titulo="Detalhe da venda">
+        {aberta && <DetalheVenda v={aberta} config={config.data} />}
       </Modal>
     </>
   )

@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
-import { Lock, ShieldCheck } from 'lucide-react'
+import { Info, Lock, ShieldCheck } from 'lucide-react'
 import { brl, cn } from '@/lib/utils'
-import { calcularSplit, mascararCPF, mascararTelefone, STATUS_TX, pct } from '@/lib/negocio'
-import type { ExtratoItem } from '@/lib/types'
+import { dataBR, STATUS_VENDA, pct } from '@/lib/negocio'
+import type { ConfigSplit, VendaIndicador } from '@/lib/types'
 import { StatusBadge } from '@/components/ui/badges'
 import { Logo } from '@/components/Logo'
 
@@ -38,10 +38,10 @@ export function TituloPagina({ titulo, sub, children }: { titulo: string; sub?: 
   )
 }
 
-/** Linha de extrato do indicador (dados do cliente já filtrados pela LGPD no banco). */
-export function LinhaExtrato({ e, onClick, mostrarCanal }: { e: ExtratoItem; onClick: () => void; mostrarCanal?: boolean }) {
-  const s = STATUS_TX[e.status]
-  const cor = e.status === 'estornado' || e.status === 'pendente' ? '#8494A8' : e.status === 'custodia' ? '#4A5B70' : '#0B1A30'
+/** Linha de venda do indicador (só o primeiro nome do cliente, LGPD). */
+export function LinhaVenda({ v, onClick, mostrarCanal }: { v: VendaIndicador; onClick: () => void; mostrarCanal?: boolean }) {
+  const s = STATUS_VENDA[v.status]
+  const cor = v.status === 'reprovado' ? '#8494A8' : v.status === 'aguardando_entrevista' ? '#4A5B70' : '#0B1A30'
   return (
     <button
       type="button"
@@ -49,75 +49,69 @@ export function LinhaExtrato({ e, onClick, mostrarCanal }: { e: ExtratoItem; onC
       className="flex w-full cursor-pointer items-center gap-3 border-b border-ink-100 bg-white px-4 py-[14px] text-left last:border-b-0 hover:bg-[#F9FAFC]"
     >
       <span className="flex size-10 shrink-0 items-center justify-center rounded-[12px] font-extrabold" style={{ background: s.avBg, color: s.avFg }}>
-        {e.primeiro_nome[0]}
+        {v.cliente[0]}
       </span>
       <div className="min-w-0 flex-1">
-        <div className="text-[15px] font-bold">{e.primeiro_nome}</div>
+        <div className="text-[15px] font-bold">{v.cliente}</div>
         <div className="truncate text-[12px] text-ink-600">
-          {new Date(e.data).toLocaleDateString('pt-BR')} · {mostrarCanal && e.canal ? e.canal : 'Plano de Saúde'}
+          {dataBR(v.data_venda)} · {mostrarCanal && v.canal ? v.canal : 'Plano de Saúde'}
         </div>
       </div>
       <div className="flex flex-col items-end gap-[5px]">
-        <span className="text-[15px] font-extrabold" style={{ color: cor, textDecoration: e.status === 'estornado' ? 'line-through' : 'none' }}>
-          {brl(e.comissao)}
+        <span className="text-[15px] font-extrabold" style={{ color: cor, textDecoration: v.status === 'reprovado' ? 'line-through' : 'none' }}>
+          {brl(v.estimativa)}
         </span>
-        <StatusBadge status={e.status} />
+        <StatusBadge status={v.status} />
       </div>
     </button>
   )
 }
 
-/** Recibo visual do split: bruto → imposto → líquido → 50/50. */
-export function ReciboSplit({ e, pctIndicador = 50 }: { e: ExtratoItem; pctIndicador?: number }) {
-  const s = STATUS_TX[e.status]
-  const r = calcularSplit(e.bruto, e.aliquota, pctIndicador)
+/** Detalhe da venda para o indicador: valor estimado a receber do consultor (só informativo). */
+export function DetalheVenda({ v, config }: { v: VendaIndicador; config: ConfigSplit | undefined }) {
+  const s = STATUS_VENDA[v.status]
   return (
     <>
       <Logo small className="text-[15px] text-ink-600 [&>img]:size-5" />
       <div className="flex items-center gap-3 rounded-[14px] bg-ink-50 p-3">
         <span className="flex size-10 items-center justify-center rounded-[12px] font-extrabold" style={{ background: s.avBg, color: s.avFg }}>
-          {e.primeiro_nome[0]}
+          {v.cliente[0]}
         </span>
         <div className="min-w-0 flex-1">
-          <div className="font-extrabold">{e.primeiro_nome}</div>
+          <div className="font-extrabold">{v.cliente}</div>
           <div className="truncate text-[12px] text-ink-600">
-            {new Date(e.data).toLocaleDateString('pt-BR')} · {e.canal ?? 'canal não informado'}
+            {dataBR(v.data_venda)} · {v.canal ?? 'canal não informado'}
           </div>
         </div>
-        <StatusBadge status={e.status} size="md" />
+        <StatusBadge status={v.status} size="md" />
       </div>
-      <Linha k="Valor bruto da adesão" v={brl(r.bruto)} />
-      <Linha k={`Imposto (${pct(e.aliquota)} ${e.aliquota > 20 ? 'PF' : 'Simples'})`} v={`− ${brl(r.imposto)}`} vermelho />
+      <Linha k="Valor da adesão" v={brl(v.valor_adesao)} />
+      <Linha k="Consultor" v={v.consultor} />
+      {config && <Linha k="Sua parte" v={`${pct(config.pct_indicador)} do líquido`} />}
       <div className="border-t border-dashed border-ink-200" />
       <div className="flex justify-between text-[15px]">
-        <span className="font-bold">Valor líquido</span>
-        <span className="font-extrabold">{brl(r.liquido)}</span>
+        <span className="font-bold">Você deve receber (estimativa)</span>
+        <span className="font-extrabold text-verde-700">{brl(v.estimativa)}</span>
       </div>
-      <div className="flex h-2.5 gap-[3px] overflow-hidden rounded-full">
-        <div className="bg-verde-600" style={{ flex: pctIndicador }} />
-        <div className="bg-ink-800" style={{ flex: 100 - pctIndicador }} />
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <div className="rounded-[12px] bg-verde-50 p-3">
-          <div className="text-[12px] font-bold text-verde-700">{pctIndicador}% Você</div>
-          <div className="text-[20px] font-extrabold text-verde-900">{brl(r.indicador)}</div>
-        </div>
-        <div className="rounded-[12px] bg-ink-50 p-3">
-          <div className="text-[12px] font-bold text-ink-600">{100 - pctIndicador}% Consultor + plataforma</div>
-          <div className="text-[20px] font-extrabold">{brl(r.resto)}</div>
-        </div>
-      </div>
-      <div className="rounded-[12px] px-3 py-2.5 text-[13px] leading-[1.5] text-ink-600" style={{ background: s.notaBg }}>
+      <div className="rounded-[12px] px-3 py-2.5 text-[13px] leading-[1.5] text-ink-600" style={{ background: s.avBg }}>
         {s.nota}
       </div>
-      <div className="flex flex-col gap-1.5">
-        <span className="text-[12px] font-bold text-ink-600">Dados do cliente</span>
-        <CampoMascarado rotulo="CPF" valor={mascararCPF(e.cpf_final)} />
-        <CampoMascarado rotulo="Telefone" valor={mascararTelefone(e.tel_final)} />
-        <CampoMascarado rotulo="Saúde" valor="•••••••••••" />
-        <SeloLGPD />
-      </div>
+      <AvisoPagamento semImposto={config ? config.aliquota_pf == null || config.aliquota_pj == null : false} />
+      <SeloLGPD />
     </>
+  )
+}
+
+/** A plataforma não paga ninguém: o Pix sai do consultor. */
+export function AvisoPagamento({ semImposto }: { semImposto?: boolean }) {
+  return (
+    <div className="flex items-start gap-2 rounded-[12px] border border-ink-200 bg-white px-3 py-2.5 text-[12px] leading-[1.5] text-ink-600">
+      <Info size={16} className="mt-px shrink-0" />
+      <span>
+        Valor só informativo. Quem paga é o seu consultor, por Pix, depois da aprovação na entrevista de saúde. A Geralindica não recebe nem repassa dinheiro.
+        {semImposto && ' O imposto ainda não foi definido, então a estimativa ainda não desconta imposto.'}
+      </span>
+    </div>
   )
 }
 

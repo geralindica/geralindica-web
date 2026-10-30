@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { ArrowUpDown, MapPin } from 'lucide-react'
 import { useConsultores } from '@/data/queries'
 import { Chip, Eyebrow } from '@/components/ui/form'
-import { HotBadge, TopBadge } from '@/components/ui/badges'
+import { HotBadge, TemperaturaBadge, TopBadge } from '@/components/ui/badges'
 import { VagasBar } from '@/components/VagasBar'
 import { Avatar } from '@/components/painel/comum'
 import { Carregando, ErroBox, Vazio } from '@/components/ui/feedback'
@@ -38,7 +38,7 @@ export function Vitrine() {
         <div className="flex flex-col gap-[10px]">
           <Eyebrow>Ranking público · {mesAtual()}</Eyebrow>
           <h1 className="m-0 text-[36px] font-extrabold tracking-[-0.04em] sm:text-[44px]">Escolha seu consultor</h1>
-          <p className="m-0 text-[16px] text-ink-600">Ordenado por vendas aprovadas e taxa de conversão.</p>
+          <p className="m-0 text-[16px] text-ink-600">Ordenado pela temperatura: quem registra as vendas e paga os indicadores em dia fica no topo.</p>
         </div>
         <div className="flex items-center gap-2 text-[14px] font-semibold text-ink-600">
           <ArrowUpDown size={18} />
@@ -110,6 +110,7 @@ export function Vitrine() {
                   </div>
                 </div>
                 <div className="flex min-h-[22px] flex-wrap gap-1.5">
+                  <TemperaturaBadge valor={c.temperatura} />
                   {c.hot && <HotBadge />}
                   {c.top && <TopBadge />}
                 </div>

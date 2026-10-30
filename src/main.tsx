@@ -22,7 +22,7 @@ const Inicio = lazy(() => import('@/pages/indicador/Inicio').then((m) => ({ defa
 const QrCodes = lazy(() => import('@/pages/indicador/QrCodes').then((m) => ({ default: m.QrCodes })))
 const Extrato = lazy(() => import('@/pages/indicador/Extrato').then((m) => ({ default: m.Extrato })))
 const MeuConsultor = lazy(() => import('@/pages/indicador/MeuConsultor').then((m) => ({ default: m.MeuConsultor })))
-const Saques = lazy(() => import('@/pages/indicador/Saques').then((m) => ({ default: m.Saques })))
+const MeusDados = lazy(() => import('@/pages/indicador/MeusDados').then((m) => ({ default: m.MeusDados })))
 const ConsultorLayout = lazy(() => import('@/pages/consultor/ConsultorLayout').then((m) => ({ default: m.ConsultorLayout })))
 const Dashboard = lazy(() => import('@/pages/consultor/Dashboard').then((m) => ({ default: m.Dashboard })))
 const Leads = lazy(() => import('@/pages/consultor/Leads').then((m) => ({ default: m.Leads })))
@@ -30,7 +30,7 @@ const LeadDetalhe = lazy(() => import('@/pages/consultor/LeadDetalhe').then((m) 
 const MeusIndicadores = lazy(() => import('@/pages/consultor/MeusIndicadores').then((m) => ({ default: m.MeusIndicadores })))
 const PerfilPublico = lazy(() => import('@/pages/consultor/PerfilPublico').then((m) => ({ default: m.PerfilPublico })))
 const AdminLayout = lazy(() => import('@/pages/admin/AdminLayout').then((m) => ({ default: m.AdminLayout })))
-const Financeiro = lazy(() => import('@/pages/admin/Financeiro').then((m) => ({ default: m.Financeiro })))
+const Vendas = lazy(() => import('@/pages/admin/Vendas').then((m) => ({ default: m.Vendas })))
 const Split = lazy(() => import('@/pages/admin/Split').then((m) => ({ default: m.Split })))
 const Usuarios = lazy(() => import('@/pages/admin/Usuarios').then((m) => ({ default: m.Usuarios })))
 const Catalogo = lazy(() => import('@/pages/admin/Catalogo').then((m) => ({ default: m.Catalogo })))
@@ -70,7 +70,7 @@ createRoot(document.getElementById('root')!).render(
                 <Route path="qr" element={<QrCodes />} />
                 <Route path="extrato" element={<Extrato />} />
                 <Route path="consultor" element={<MeuConsultor />} />
-                <Route path="saques" element={<Saques />} />
+                <Route path="dados" element={<MeusDados />} />
               </Route>
               <Route
                 path="consultor"
@@ -94,7 +94,7 @@ createRoot(document.getElementById('root')!).render(
                   </RequireRole>
                 }
               >
-                <Route index element={<Financeiro />} />
+                <Route index element={<Vendas />} />
                 <Route path="split" element={<Split />} />
                 <Route path="usuarios" element={<Usuarios />} />
                 <Route path="catalogo" element={<Catalogo />} />

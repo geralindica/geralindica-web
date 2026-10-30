@@ -1,17 +1,22 @@
-// Regras de negócio puras da Geralindica. Nada de valor de comissão escrito à mão nas telas:
-// tudo passa por estas funções (as mesmas fórmulas existem no banco, em extrato_indicador()).
-import type { Consultor, ConsultorRow, Etapa, StatusTx } from './types'
+// Regras de negócio puras da Geralindica. Nada de valor escrito à mão nas telas:
+// tudo passa por estas funções (a mesma fórmula do indicador existe no banco, em private.estimativa_indicador()).
+// A plataforma não movimenta dinheiro: os valores aqui são estimativas do que o consultor repassa por fora.
+import type { Consultor, ConsultorRow, Etapa, StatusVenda } from './types'
 
 export const round2 = (v: number) => Math.round(v * 100) / 100
 
-/** Split: bruto − imposto = líquido → % indicador / restante (consultor + plataforma). */
-export function calcularSplit(bruto: number, aliquotaPct: number, pctIndicador = 50, pctConsultorDoResto = 60) {
-  const imposto = round2((bruto * aliquotaPct) / 100)
+/**
+ * Split de uma venda: valor − imposto = líquido → % indicador / restante (consultor + Geralindica).
+ * Os percentuais vêm da configuração do admin (config_split). Imposto não definido conta como zero;
+ * divisão consultor x Geralindica não definida devolve null nessas duas partes.
+ */
+export function calcularSplit(bruto: number, aliquotaPct: number | null, pctIndicador: number, pctConsultorDoResto: number | null) {
+  const imposto = round2((bruto * (aliquotaPct ?? 0)) / 100)
   const liquido = round2(bruto - imposto)
   const indicador = round2((liquido * pctIndicador) / 100)
   const resto = round2(liquido - indicador)
-  const consultor = round2((resto * pctConsultorDoResto) / 100)
-  return { bruto, imposto, liquido, indicador, resto, consultor, plataforma: round2(resto - consultor) }
+  const consultor = pctConsultorDoResto == null ? null : round2((resto * pctConsultorDoResto) / 100)
+  return { bruto, imposto, liquido, indicador, resto, consultor, plataforma: consultor == null ? null : round2(resto - consultor) }
 }
 
 export const primeiroNome = (nome: string) => nome.trim().split(/\s+/)[0] ?? ''
@@ -85,14 +90,14 @@ export function cnpjValido(cnpj: string) {
 // ---------- Etapas do funil (CRM) ----------
 export const ETAPAS: { id: Etapa; nome: string; dot: string; bg: string; kanban: boolean }[] = [
   { id: 'novo', nome: 'Novo', dot: '#8494A8', bg: '#EAEFF5', kanban: true },
-  { id: 'triagem', nome: 'Em triagem (robô)', dot: '#3B7BE8', bg: '#EAEFF5', kanban: true },
+  { id: 'triagem', nome: 'Em triagem', dot: '#3B7BE8', bg: '#EAEFF5', kanban: true },
   { id: 'cotacao', nome: 'Cotação enviada', dot: '#3B7BE8', bg: '#EAEFF5', kanban: true },
   { id: 'negociacao', nome: 'Negociação', dot: '#3B7BE8', bg: '#EAEFF5', kanban: true },
   { id: 'contrato', nome: 'Contrato emitido', dot: '#3B7BE8', bg: '#EAEFF5', kanban: true },
-  { id: 'custodia', nome: 'Pagamento em custódia', dot: '#F2A516', bg: '#FFF8E8', kanban: true },
+  { id: 'custodia', nome: 'Pagamento recebido', dot: '#F2A516', bg: '#FFF8E8', kanban: true },
   { id: 'entrevista', nome: 'Entrevista de saúde', dot: '#F2A516', bg: '#FFF8E8', kanban: true },
   { id: 'aprovado', nome: 'Aprovado (Verdinho)', dot: '#FFFFFF', bg: '#0F9D58', kanban: true },
-  { id: 'reprovado', nome: 'Reprovado (estornado)', dot: '#E2574C', bg: '#FDF3F2', kanban: true },
+  { id: 'reprovado', nome: 'Reprovado (devolvido)', dot: '#E2574C', bg: '#FDF3F2', kanban: true },
   { id: 'perdido', nome: 'Perdido (desistiu)', dot: '#8494A8', bg: '#EAEFF5', kanban: false },
 ]
 export const nomeEtapa = (e: Etapa) => ETAPAS.find((x) => x.id === e)?.nome ?? e
@@ -108,13 +113,24 @@ export function corEtapa(e: Etapa) {
   return { bg: '#EAEFF5', fg: '#1F2E45', dot: '#8494A8' }
 }
 
-// ---------- Status financeiro (badge) ----------
-export const STATUS_TX: Record<StatusTx, { label: string; bg: string; fg: string; border: string; avBg: string; avFg: string; nota: string; notaBg: string }> = {
-  pendente: { label: 'Pendente', bg: '#FFFBF0', fg: '#9A5B00', border: '1px dashed #F2A516', avBg: '#FFF3D6', avFg: '#9A5B00', nota: 'Aguardando o cliente pagar a adesão. Sem valor em custódia ainda.', notaBg: '#FFFBF0' },
-  custodia: { label: 'Em custódia', bg: '#FFF3D6', fg: '#9A5B00', border: '0', avBg: '#FFF3D6', avFg: '#9A5B00', nota: 'Pagamento recebido e bloqueado até a entrevista de saúde. Se aprovado, vira Verdinho.', notaBg: '#FFF3D6' },
-  verdinho: { label: 'Verdinho ✓', bg: '#0F9D58', fg: '#fff', border: '0', avBg: '#ECF8F1', avFg: '#0A7F47', nota: 'Entrevista aprovada. Comissão liberada para saque.', notaBg: '#ECF8F1' },
-  repassado: { label: 'Verdinho · pago', bg: '#ECF8F1', fg: '#0A7F47', border: '0', avBg: '#EAEFF5', avFg: '#4A5B70', nota: 'Comissão já transferida via Pix.', notaBg: '#ECF8F1' },
-  estornado: { label: 'Estornado', bg: '#FCEAE8', fg: '#B3372F', border: '0', avBg: '#FCEAE8', avFg: '#B3372F', nota: 'Cliente reprovado na entrevista de saúde. Valor estornado 100% ao cliente; não há comissão.', notaBg: '#FCEAE8' },
+// ---------- Status da venda registrada (badge) ----------
+export const STATUS_VENDA: Record<StatusVenda, { label: string; bg: string; fg: string; avBg: string; avFg: string; nota: string }> = {
+  aguardando_entrevista: { label: 'Aguardando entrevista', bg: '#FFF3D6', fg: '#9A5B00', avBg: '#FFF3D6', avFg: '#9A5B00', nota: 'O cliente pagou ao consultor, que segura o valor até a entrevista de saúde.' },
+  aprovado: { label: 'Verdinho ✓', bg: '#0F9D58', fg: '#fff', avBg: '#ECF8F1', avFg: '#0A7F47', nota: 'Entrevista aprovada. O consultor faz o Pix da sua parte.' },
+  reprovado: { label: 'Reprovado', bg: '#FCEAE8', fg: '#B3372F', avBg: '#FCEAE8', avFg: '#B3372F', nota: 'Cliente reprovado na entrevista de saúde. O consultor devolveu o valor; não há comissão.' },
+}
+export const STATUS_VENDA_OPCOES: { v: StatusVenda; label: string }[] = [
+  { v: 'aguardando_entrevista', label: 'Aguardando entrevista' },
+  { v: 'aprovado', label: 'Aprovado no Verdinho' },
+  { v: 'reprovado', label: 'Reprovado e devolvido' },
+]
+
+// ---------- Temperatura (reputação do consultor) ----------
+// O número (0 a 100) vem pronto do banco. Aqui só as faixas para exibir. PROVISÓRIO, como a fórmula.
+export function faixaTemperatura(t: number) {
+  if (t >= 70) return { label: 'Quente', bg: '#FDECE7', fg: '#B83A12', barra: '#E8572A' }
+  if (t >= 40) return { label: 'Morna', bg: '#FFF3D6', fg: '#9A5B00', barra: '#F2A516' }
+  return { label: 'Fria', bg: '#E7EFFC', fg: '#1F5BBF', barra: '#3B7BE8' }
 }
 
 // ---------- Consultores: ranking e vagas ----------
@@ -130,7 +146,7 @@ export function corVagas(full: boolean, vagas: number) {
 
 export function enriquecerConsultores(rows: ConsultorRow[]): Consultor[] {
   return [...rows]
-    .sort((a, b) => b.vendas - a.vendas || b.leads_total - a.leads_total)
+    .sort((a, b) => b.temperatura - a.temperatura || b.vendas - a.vendas)
     .map((c, i) => {
       const vagas = Math.max(0, c.max_indicadores - c.ocupacao)
       const full = vagas === 0

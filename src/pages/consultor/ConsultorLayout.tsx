@@ -2,7 +2,7 @@ import { KanbanSquare, LayoutDashboard, Store, Users } from 'lucide-react'
 import { PainelLayout, type NavItem } from '@/components/painel/PainelLayout'
 import { useConsultores } from '@/data/queries'
 import { usePerfil } from '@/auth/AuthProvider'
-import { emRecuperacao, useLeadsCRM, useMeuConsultor } from './dados'
+import { useLeadsCRM, useMeuConsultor } from './dados'
 import { ETAPAS_FINAIS } from '@/lib/negocio'
 
 export function ConsultorLayout() {
@@ -10,7 +10,7 @@ export function ConsultorLayout() {
   const me = useMeuConsultor()
   const leads = useLeadsCRM()
   const ranking = useConsultores()
-  const ativos = (leads.data ?? []).filter((l) => !ETAPAS_FINAIS.includes(l.etapa) && !emRecuperacao(l)).length
+  const ativos = (leads.data ?? []).filter((l) => !ETAPAS_FINAIS.includes(l.etapa)).length
   const rank = ranking.data?.find((c) => c.id === p.id)?.rank
 
   const nav: NavItem[] = [
@@ -26,7 +26,7 @@ export function ConsultorLayout() {
     <PainelLayout
       nav={nav}
       subtitulo="Consultor"
-      papelLabel={rank ? `#${rank} no ranking` : 'Consultor'}
+      papelLabel={c ? `${c.temperatura}° de temperatura${rank ? ` · #${rank}` : ''}` : 'Consultor'}
       foto={c?.foto_url}
       rodapeExtra={
         c && (

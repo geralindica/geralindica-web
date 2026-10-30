@@ -73,7 +73,7 @@ export function MeusIndicadores() {
       ) : ind.error ? (
         <ErroBox erro={ind.error} onRetry={() => ind.refetch()} />
       ) : !ind.data!.length ? (
-        <Vazio titulo="Nenhum indicador ainda" texto="Compartilhe seu link de convite ou apareça bem no ranking da vitrine para atrair indicadores." />
+        <Vazio titulo="Nenhum indicador ainda" texto="Compartilhe seu link de convite. Registrar as vendas e repassar os Pix em dia esquenta a sua temperatura e atrai indicadores." />
       ) : (
         <Card className="overflow-x-auto">
           <div className="min-w-[760px]">
@@ -82,7 +82,7 @@ export function MeusIndicadores() {
               <span>Canais</span>
               <span className="text-right">Leads</span>
               <span className="text-right">Conversão</span>
-              <span className="text-right">Comissão gerada</span>
+              <span className="text-right" title="Estimativa da parte do indicador nas vendas aprovadas. Você faz o Pix por fora.">A repassar (Pix)</span>
               <span>Status</span>
             </div>
             {ind.data!.map((i) => (
@@ -112,7 +112,7 @@ export function MeusIndicadores() {
                 </div>
                 <span className="text-right text-[14px] font-bold">{i.leads}</span>
                 <span className="text-right text-[14px] font-bold">{i.leads ? Math.round((i.aprovados * 100) / i.leads) : 0}%</span>
-                <span className="text-right text-[14px] font-extrabold">{brl(i.comissao)}</span>
+                <span className="text-right text-[14px] font-extrabold">{brl(i.a_repassar)}</span>
                 <AtivoBadge ativo={recentes(i)} />
               </div>
             ))}

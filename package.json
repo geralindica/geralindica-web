@@ -8,7 +8,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "lint": "eslint .",
-    "test:banco": "node supabase/tests/regras.mjs"
+    "test:banco": "node supabase/tests/regras.mjs",
+    "test:seed": "node supabase/tests/seed.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "6.3.1",

@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react'
-import { Clock, Lock, Undo2 } from 'lucide-react'
+import { Clock, Thermometer, Undo2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CheckCircleFilled } from '@/components/icons'
-import { STATUS_TX } from '@/lib/negocio'
-import type { StatusTx } from '@/lib/types'
+import { STATUS_VENDA, faixaTemperatura } from '@/lib/negocio'
+import type { StatusVenda } from '@/lib/types'
 
 /** Verdinho é o único badge sólido verde (com ícone preenchido). */
 export function VerdinhoBadge({ className }: { className?: string }) {
@@ -15,27 +15,40 @@ export function VerdinhoBadge({ className }: { className?: string }) {
   )
 }
 
-const statusIcon: Record<StatusTx, ReactNode> = {
-  pendente: <Clock size={13} strokeWidth={2.5} />,
-  custodia: <Lock size={13} strokeWidth={2.5} />,
-  verdinho: <CheckCircleFilled size={13} />,
-  repassado: <CheckCircleFilled size={13} />,
-  estornado: <Undo2 size={13} strokeWidth={2.5} />,
+const statusIcon: Record<StatusVenda, ReactNode> = {
+  aguardando_entrevista: <Clock size={13} strokeWidth={2.5} />,
+  aprovado: <CheckCircleFilled size={13} />,
+  reprovado: <Undo2 size={13} strokeWidth={2.5} />,
 }
 
-/** Badge de status financeiro (Pendente usa contorno tracejado para não confundir com Em custódia). */
-export function StatusBadge({ status, size = 'sm', label }: { status: StatusTx; size?: 'sm' | 'md'; label?: string }) {
-  const s = STATUS_TX[status]
+/** Badge do status da venda registrada pelo consultor. */
+export function StatusBadge({ status, size = 'sm', label }: { status: StatusVenda; size?: 'sm' | 'md'; label?: string }) {
+  const s = STATUS_VENDA[status]
   return (
     <span
       className={cn(
         'inline-flex items-center gap-1 whitespace-nowrap rounded-full font-bold',
         size === 'sm' ? 'py-0.5 pl-[7px] pr-[9px] text-[11px]' : 'py-[3px] pl-2 pr-[10px] text-[12px]',
       )}
-      style={{ background: s.bg, color: s.fg, border: s.border }}
+      style={{ background: s.bg, color: s.fg }}
     >
       {statusIcon[status]}
       {label ?? s.label}
+    </span>
+  )
+}
+
+/** Temperatura (reputação) do consultor: número de 0 a 100 + faixa Fria/Morna/Quente. */
+export function TemperaturaBadge({ valor, small }: { valor: number; small?: boolean }) {
+  const f = faixaTemperatura(valor)
+  return (
+    <span
+      title="Temperatura: reputação do consultor (vendas registradas, avaliações e vendas recentes)"
+      className={cn('inline-flex items-center gap-1 whitespace-nowrap rounded-full font-bold', small ? 'px-[9px] py-0.5 text-[11px]' : 'px-[10px] py-[3px] text-[12px]')}
+      style={{ background: f.bg, color: f.fg }}
+    >
+      <Thermometer size={small ? 12 : 14} strokeWidth={2.5} />
+      {valor}° · {f.label}
     </span>
   )
 }

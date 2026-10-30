@@ -1,15 +1,16 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/auth/AuthProvider'
-import type { Canal, ExtratoItem, Saque } from '@/lib/types'
+import type { Canal, StatusVenda, VendaIndicador } from '@/lib/types'
 
-export function useExtrato() {
+/** Vendas registradas pelos consultores com os códigos deste indicador (já filtradas pela LGPD no banco). */
+export function useVendas() {
   return useQuery({
-    queryKey: ['ind', 'extrato'],
+    queryKey: ['ind', 'vendas'],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('extrato_indicador')
+      const { data, error } = await supabase.rpc('vendas_indicador')
       if (error) throw error
-      return ((data ?? []) as ExtratoItem[]).map((e) => ({ ...e, bruto: Number(e.bruto), aliquota: Number(e.aliquota), comissao: Number(e.comissao) }))
+      return ((data ?? []) as VendaIndicador[]).map((v) => ({ ...v, valor_adesao: Number(v.valor_adesao), estimativa: Number(v.estimativa) }))
     },
   })
 }
@@ -64,21 +65,10 @@ export function useMeuVinculo() {
   })
 }
 
-export function useSaques() {
-  const { session } = useAuth()
-  return useQuery({
-    queryKey: ['ind', 'saques'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('saques').select('*').eq('indicador_id', session!.user.id).order('created_at', { ascending: false }).limit(24)
-      if (error) throw error
-      return ((data ?? []) as Saque[]).map((s) => ({ ...s, valor: Number(s.valor) }))
-    },
-  })
-}
-
-export function totaisExtrato(itens: ExtratoItem[] | undefined) {
-  const soma = (st: string) => (itens ?? []).filter((e) => e.status === st).reduce((a, e) => a + e.comissao, 0)
-  return { liberado: soma('verdinho'), custodia: soma('custodia'), pago: soma('repassado'), pendente: soma('pendente') }
+/** Estimativas do que o consultor deve repassar (a plataforma não paga nada). */
+export function totaisVendas(itens: VendaIndicador[] | undefined) {
+  const soma = (st: StatusVenda) => (itens ?? []).filter((v) => v.status === st).reduce((a, v) => a + v.estimativa, 0)
+  return { aprovado: soma('aprovado'), aguardando: soma('aguardando_entrevista') }
 }
 
 export const linkCanal = (codigo: string) => `${window.location.origin}/q/${codigo}`

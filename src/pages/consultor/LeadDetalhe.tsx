@@ -1,38 +1,20 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import {
-  ArrowLeft,
-  Bot,
-  Check,
-  CheckCircle2,
-  Eye,
-  EyeOff,
-  FileText,
-  Hourglass,
-  Loader2,
-  MessageCircle,
-  MessagesSquare,
-  Percent,
-  Send,
-  StickyNote,
-  TriangleAlert,
-  User,
-  type LucideIcon,
-} from 'lucide-react'
+import { ArrowLeft, CheckCircle2, Eye, EyeOff, Handshake, Loader2, MessageCircle, MessagesSquare, StickyNote, TriangleAlert, User, type LucideIcon } from 'lucide-react'
 import { supabase, mensagemErro } from '@/lib/supabase'
-import { brl, cn } from '@/lib/utils'
-import { ETAPAS, corEtapa, dataBR, dataHoraBR, iniciais, mascararCPFCompleto, mascararTelefoneCompleto, nomeEtapa, primeiroNome } from '@/lib/negocio'
-import type { Etapa, LeadEvento } from '@/lib/types'
-import { ALTERNATIVAS, estimarMensalidade, gerarNovaCotacao, linkWhatsApp, numeroInternacional, pedirDescontoAdministradora, reenviarCotacao, type Alternativa } from '@/integrations'
+import { brl } from '@/lib/utils'
+import { ETAPAS, STATUS_VENDA_OPCOES, corEtapa, dataBR, dataHoraBR, iniciais, mascararCPFCompleto, mascararTelefoneCompleto, nomeEtapa, primeiroNome } from '@/lib/negocio'
+import type { Etapa, LeadComOrigem, LeadEvento, StatusVenda, Venda } from '@/lib/types'
+import { linkWhatsApp, numeroInternacional } from '@/integrations'
 import { Button } from '@/components/ui/button'
+import { StatusBadge } from '@/components/ui/badges'
 import { Card } from '@/components/painel/comum'
+import { Field } from '@/components/ui/form'
 import { Carregando, ErroBox, Vazio, useToast } from '@/components/ui/feedback'
 import { useLead } from './dados'
 
 const ICONE_EVENTO: Record<LeadEvento['tipo'], { icon: LucideIcon; bg: string; fg: string }> = {
-  robo: { icon: Bot, bg: '#E7EFFC', fg: '#1F5BBF' },
-  pdf: { icon: FileText, bg: '#FCEAE8', fg: '#B3372F' },
   consultor: { icon: User, bg: '#EAEFF5', fg: '#1F2E45' },
   cliente: { icon: MessageCircle, bg: '#FFF3D6', fg: '#9A5B00' },
   sistema: { icon: CheckCircle2, bg: '#ECF8F1', fg: '#0A7F47' },
@@ -61,15 +43,12 @@ export function LeadDetalhe() {
   const [codigo, setCodigo] = useState('')
   const [mostrar, setMostrar] = useState(false)
   const [nota, setNota] = useState('')
-  const [alts, setAlts] = useState<Alternativa[]>(['coparticipacao'])
-  const [desconto, setDesconto] = useState(25)
   const [valor, setValor] = useState('')
   const lead = q.data?.lead
 
   useEffect(() => {
     if (lead) {
       setValor(lead.valor_adesao ? String(lead.valor_adesao).replace('.', ',') : '')
-      if (lead.desconto_pct) setDesconto(lead.desconto_pct)
     }
   }, [lead?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -89,9 +68,6 @@ export function LeadDetalhe() {
     const { error } = await supabase.from('lead_eventos').insert({ lead_id: id!, tipo: 'nota', texto })
     if (error) throw error
   }, () => 'Anotação salva no histórico.')
-  const reenviar = useAcao(id, async () => reenviarCotacao(id!), () => 'Cotação reenviada no WhatsApp.')
-  const novaCot = useAcao(id, (txt: string) => gerarNovaCotacao(id!, alts, txt), () => 'Nova cotação enviada ao cliente.')
-  const pedirDesc = useAcao(id, (pct: number) => pedirDescontoAdministradora(id!, pct), (p) => `Pedido de ${p}% enviado à Administradora.`)
 
   if (q.isLoading) return <Carregando />
   if (q.error) return <ErroBox erro={q.error} onRetry={() => q.refetch()} />
@@ -105,13 +81,8 @@ export function LeadDetalhe() {
     )
 
   const cor = corEtapa(lead.etapa)
-  const mensal = Math.round((lead.valor_adesao ?? 0) * 0.92)
-  const estimada = estimarMensalidade(mensal, alts)
   const semCanal = !lead.canal_id
   const zap = numeroInternacional(lead.telefone)
-  const ordem = ['Tipo', 'Idade', 'Profissão', 'Abrangência', 'Acomodação', 'Obstetrícia', 'Dependentes']
-  const pos = (k: string) => (ordem.includes(k) ? ordem.indexOf(k) : ordem.length)
-  const triagem = Object.entries(lead.triagem ?? {}).sort(([a], [b]) => pos(a) - pos(b))
 
   return (
     <>
@@ -142,7 +113,7 @@ export function LeadDetalhe() {
           <div className="flex min-w-[240px] flex-1 flex-col gap-1">
             <span className="text-[15px] font-extrabold text-[#6B3F00]">Atribuição não confirmada</span>
             <span className="text-[13px] leading-[1.5] text-[#7A4A00]">
-              O código do canal chegou vazio no WhatsApp. Peça ao cliente o código impresso no material (ex.: no encosto do banco) para creditar a comissão ao indicador certo.
+              Este lead está sem código de indicador. Peça ao cliente o código que veio na mensagem ou está impresso no material (ex.: no encosto do banco) para o indicador certo receber a parte dele.
             </span>
           </div>
           <form
@@ -169,29 +140,7 @@ export function LeadDetalhe() {
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,1fr)]">
         <div className="flex flex-col gap-4">
           <Card className="flex flex-col gap-3.5 p-5">
-            <div className="flex items-center justify-between">
-              <span className="text-[16px] font-extrabold">Respostas da triagem</span>
-              <span className="flex items-center gap-1.5 text-[12px] font-bold text-azul-fg">
-                <Bot size={16} />
-                Robô · {lead.triagem_passo}/7 perguntas
-              </span>
-            </div>
-            {triagem.length ? (
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-2">
-                {triagem.map(([k, v]) => (
-                  <div key={k} className="flex flex-col gap-0.5 rounded-[12px] bg-ink-50 px-3 py-2.5">
-                    <span className="text-[11px] font-bold uppercase tracking-[.04em] text-ink-600">{k}</span>
-                    <span className="text-[15px] font-bold">{v}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="m-0 text-[14px] text-ink-600">O robô ainda está fazendo a triagem com o cliente.</p>
-            )}
-          </Card>
-
-          <Card className="flex flex-col gap-3.5 p-5">
-            <span className="text-[16px] font-extrabold">Conversa resumida</span>
+            <span className="text-[16px] font-extrabold">Histórico do atendimento</span>
             <div className="flex flex-col">
               {q.data!.eventos.map((ev) => {
                 const ic = ICONE_EVENTO[ev.tipo] ?? ICONE_EVENTO.nota
@@ -264,23 +213,13 @@ export function LeadDetalhe() {
                 Salvar
               </Button>
             </form>
-            <p className="m-0 text-[12px] leading-[1.45] text-ink-400">Contrato emitido cria a transação; pagamento fica em custódia até a entrevista; Aprovado libera a comissão (Verdinho).</p>
+            <p className="m-0 text-[12px] leading-[1.45] text-ink-400">A etapa é só do seu CRM. O que conta para o indicador e para a sua temperatura é a venda registrada abaixo.</p>
           </Card>
 
+          <RegistrarVenda lead={lead} venda={q.data!.venda} />
+
           <Card className="flex flex-col gap-3 p-[18px]">
-            <div className="flex items-center gap-3">
-              <span className="flex h-[52px] w-11 items-center justify-center rounded-lg bg-vermelho-bg text-[11px] font-extrabold text-vermelho-fg">PDF</span>
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-[14px] font-bold">
-                  Cotacao_{primeiroNome(lead.nome)}_{(lead.plano ?? 'plano').split(' ')[0]}.pdf
-                </div>
-                <div className="text-[12px] text-ink-600">3 opções · gerada pelo robô (Cotaí)</div>
-              </div>
-            </div>
-            <Button variant="outline" size="sm" className="h-[42px]" disabled={reenviar.isPending} onClick={() => reenviar.mutate(undefined)}>
-              {reenviar.isPending ? <Loader2 size={18} className="animate-spin" /> : reenviar.isSuccess ? <Check size={18} /> : <Send size={18} />}
-              {reenviar.isSuccess ? 'Cotação reenviada no WhatsApp' : 'Reenviar cotação'}
-            </Button>
+            <span className="text-[15px] font-extrabold">Contato do cliente</span>
             <div className="grid grid-cols-2 gap-2">
               <div className="flex items-center gap-2 rounded-[10px] bg-ink-50 px-2.5 py-2">
                 <span className="text-[11px] text-ink-600">CPF</span>
@@ -305,69 +244,115 @@ export function LeadDetalhe() {
             </div>
           </Card>
 
-          <Card className="flex flex-col gap-3 p-[18px]">
-            <span className="text-[15px] font-extrabold">Oferecer alternativa mais barata</span>
-            <div className="flex flex-wrap gap-1.5">
-              {ALTERNATIVAS.map((a) => {
-                const on = alts.includes(a.id)
-                return (
-                  <button
-                    key={a.id}
-                    type="button"
-                    aria-pressed={on}
-                    onClick={() => setAlts(on ? alts.filter((x) => x !== a.id) : [...alts, a.id])}
-                    className={cn('cursor-pointer rounded-full border px-3 py-[7px] text-[13px] font-bold', on ? 'border-verde-600 bg-verde-50 text-verde-900' : 'border-ink-200 bg-white text-ink-950')}
-                  >
-                    {a.label}
-                  </button>
-                )
-              })}
-            </div>
-            <div className="flex items-center justify-between rounded-[12px] bg-ink-50 px-3.5 py-3">
-              <span className="text-[13px] font-semibold text-ink-600">Mensalidade estimada</span>
-              <span className="text-[14px]">
-                <s className="text-ink-400">{brl(mensal)}</s> <b className="text-[18px]">{brl(estimada)}</b>
-              </span>
-            </div>
-            <Button variant="dark" size="sm" className="h-[42px]" disabled={!lead.valor_adesao || novaCot.isPending} onClick={() => novaCot.mutate(brl(estimada))}>
-              {novaCot.isPending && <Loader2 size={18} className="animate-spin" />}
-              Gerar nova cotação
-            </Button>
-          </Card>
-
-          <Card className="flex flex-col gap-3 p-[18px]">
-            <div className="flex items-baseline justify-between">
-              <span className="flex items-center gap-1.5 text-[15px] font-extrabold">
-                <Percent size={16} />
-                Desconto na taxa de adesão
-              </span>
-              <span className="text-[24px] font-extrabold text-verde-700">{desconto}%</span>
-            </div>
-            <input type="range" min={15} max={50} step={5} value={desconto} onChange={(e) => setDesconto(+e.target.value)} aria-label="Desconto" className="w-full" />
-            <div className="flex justify-between text-[11px] font-bold text-ink-400">
-              <span>15%</span>
-              <span>50%</span>
-            </div>
-            <div className="flex justify-between text-[13px]">
-              <span className="text-ink-600">Adesão com desconto</span>
-              <span>
-                <s className="text-ink-400">{brl(lead.valor_adesao ?? 0)}</s> <b>{brl((lead.valor_adesao ?? 0) * (1 - desconto / 100))}</b>
-              </span>
-            </div>
-            {lead.desconto_status === 'solicitado' && lead.desconto_pct === desconto ? (
-              <div className="flex h-[42px] items-center justify-center gap-2 rounded-[10px] bg-ambar-fg text-[14px] font-bold text-white">
-                <Hourglass size={18} />
-                Enviado à Administradora · aguardando
-              </div>
-            ) : (
-              <Button variant="dark" size="sm" className="h-[42px]" disabled={!lead.valor_adesao || pedirDesc.isPending} onClick={() => pedirDesc.mutate(desconto)}>
-                <Send size={18} />
-                Pedir desconto à Administradora
-              </Button>
-            )}
-          </Card>
         </div>
       </div>
     </>
+  )
+}
+
+// ---------------- Registrar venda ----------------
+/** O consultor registra a venda que fechou. Uma por lead: dá para atualizar o status depois da entrevista. */
+function RegistrarVenda({ lead, venda }: { lead: LeadComOrigem; venda: Venda | null }) {
+  const [params, setParams] = useSearchParams()
+  const pedido = params.get('venda')
+  const statusInicial: StatusVenda = pedido === 'aprovado' ? 'aprovado' : pedido === 'reprovado' ? 'reprovado' : venda?.status ?? 'aguardando_entrevista'
+  const hoje = new Date()
+  const hojeISO = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`
+  const [aberto, setAberto] = useState(!!pedido)
+  const [f, setF] = useState({
+    cliente: venda?.cliente ?? primeiroNome(lead.nome),
+    codigo: lead.canal?.codigo ?? '',
+    valor: venda ? String(venda.valor_adesao).replace('.', ',') : lead.valor_adesao ? String(lead.valor_adesao).replace('.', ',') : '',
+    data: venda?.data_venda ?? hojeISO,
+    status: statusInicial,
+  })
+  const toast = useToast()
+  const salvar = useAcao(lead.id, async () => {
+    const v = Number(f.valor.replace(/\./g, '').replace(',', '.'))
+    const { error } = await supabase.rpc('registrar_venda', {
+      p_lead: lead.id,
+      p_cliente: f.cliente.trim(),
+      p_codigo: f.codigo.trim() || null,
+      p_valor: v,
+      p_data: f.data,
+      p_status: f.status,
+    })
+    if (error) throw error
+  }, () => (f.status === 'aprovado' ? 'Venda registrada. Agora faça o Pix do indicador e da Geralindica.' : 'Venda registrada.'))
+
+  return (
+    <Card className="flex flex-col gap-3 p-[18px]">
+      <div className="flex items-center justify-between gap-2">
+        <span className="flex items-center gap-1.5 text-[15px] font-extrabold">
+          <Handshake size={17} />
+          Venda
+        </span>
+        {venda && <StatusBadge status={venda.status} size="md" />}
+      </div>
+      {venda && !aberto ? (
+        <>
+          <div className="text-[13px] leading-[1.5] text-ink-600">
+            {venda.cliente} · {brl(venda.valor_adesao)} · {dataBR(venda.data_venda + 'T12:00')}
+          </div>
+          <Button variant="outline" size="sm" className="h-[42px]" onClick={() => setAberto(true)}>
+            Atualizar venda
+          </Button>
+        </>
+      ) : !aberto ? (
+        <Button variant="primary" size="sm" className="h-[42px] font-extrabold" onClick={() => setAberto(true)}>
+          <Handshake size={18} />
+          Registrar venda
+        </Button>
+      ) : (
+        <form
+          className="flex flex-col gap-3"
+          onSubmit={(e) => {
+            e.preventDefault()
+            const v = Number(f.valor.replace(/\./g, '').replace(',', '.'))
+            if (!f.cliente.trim()) return toast('Informe o primeiro nome do cliente.', 'erro')
+            if (!v || v <= 0) return toast('Informe o valor da adesão.', 'erro')
+            salvar.mutate(undefined, {
+              onSuccess: () => {
+                setAberto(false)
+                if (pedido) setParams({}, { replace: true })
+              },
+            })
+          }}
+        >
+          <Field label="Cliente (primeiro nome)" value={f.cliente} maxLength={60} onChange={(e) => setF({ ...f, cliente: e.target.value })} />
+          <Field label="Código do indicador" value={f.codigo} onChange={(e) => setF({ ...f, codigo: e.target.value.toUpperCase() })} placeholder="Vazio se o cliente veio sem indicador" className="font-mono" />
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Valor da adesão (R$)" value={f.valor} inputMode="decimal" onChange={(e) => setF({ ...f, valor: e.target.value.replace(/[^\d,.]/g, '') })} />
+            <Field label="Data da venda" type="date" value={f.data} max={hojeISO} onChange={(e) => setF({ ...f, data: e.target.value })} />
+          </div>
+          <label className="flex flex-col gap-1.5 text-[13px] font-bold">
+            Status
+            <select
+              value={f.status}
+              onChange={(e) => setF({ ...f, status: e.target.value as StatusVenda })}
+              className="h-12 rounded-[12px] border border-ink-200 bg-white px-3 text-[15px] font-medium outline-none focus:border-verde-500"
+            >
+              {STATUS_VENDA_OPCOES.map((o) => (
+                <option key={o.v} value={o.v}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <p className="m-0 text-[12px] leading-[1.45] text-ink-600">
+            O dinheiro fica com você até a entrevista de saúde. Reprovado: devolva ao cliente. Aprovado: faça o Pix da parte do indicador e da Geralindica.
+          </p>
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" size="sm" className="h-[42px] flex-1" onClick={() => setAberto(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" variant="primary" size="sm" className="h-[42px] flex-1 font-extrabold" disabled={salvar.isPending}>
+              {salvar.isPending && <Loader2 size={18} className="animate-spin" />}
+              Salvar venda
+            </Button>
+          </div>
+        </form>
+      )}
+    </Card>
   )
 }

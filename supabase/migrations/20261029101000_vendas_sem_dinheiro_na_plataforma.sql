@@ -94,6 +94,11 @@ alter table public.config_split
   add constraint config_split_aliquotas_check check ((aliquota_pf is null or aliquota_pf between 0 and 100) and (aliquota_pj is null or aliquota_pj between 0 and 100)),
   add constraint config_split_pcts_check check (pct_indicador between 0 and 100 and (pct_consultor_restante is null or pct_consultor_restante between 0 and 100));
 
+-- O simulador da página inicial (sem login) usa os mesmos percentuais. Não há nada sigiloso aqui.
+drop policy if exists "config: leitura logado" on public.config_split;
+create policy "config: leitura publica" on public.config_split for select using (true);
+grant select on public.config_split to anon;
+
 -- Quanto o indicador deve receber do consultor numa venda: (valor − imposto) × % do indicador.
 -- É SÓ INFORMATIVO: quem paga é o consultor, por fora. Sem imposto configurado, conta como zero (a tela avisa).
 create or replace function private.estimativa_indicador(p_valor numeric, p_indicador uuid) returns numeric
