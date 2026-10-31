@@ -95,8 +95,8 @@ espera('admin atribui a qualquer indicador', await como('admin', `select public.
 
 // --- Registrar venda ---
 const t0 = (await um(`select temperatura from public.consultores where id = $1`, [u.c1])).temperatura
-const reg = (status, valor = 1000, codigo = k1.codigo, quem = 'c1', lead = L, data = hoje) =>
-  como(quem, `select public.registrar_venda($1, 'Cliente', $2, $3, $4::date, $5) as id`, [lead, codigo, valor, data, status])
+const reg = (status, valor = 1000, codigo = k1.codigo, quem = 'c1', lead = L, data = hoje, bonif = null) =>
+  como(quem, `select public.registrar_venda($1, 'Cliente', $2, $3, $4::date, $5, $6) as id`, [lead, codigo, valor, data, status, bonif])
 espera('venda sem valor é bloqueada', await reg('aguardando_entrevista', 0), false, 'valor')
 espera('venda com data no futuro é bloqueada', await reg('aguardando_entrevista', 1000, k1.codigo, 'c1', L, '2999-01-01'), false, 'futuro')
 espera('venda com status inválido é bloqueada', await reg('verdinho'), false, 'Status inválido')
@@ -126,10 +126,39 @@ espera('venda não traz telefone nem CPF do cliente', sim(v && !('telefone' in v
 espera('outro indicador não vê essa venda', sim((await como('i2', `select * from public.vendas_indicador()`)).rows.length === 0), true)
 espera('indicador não lê a tabela de leads', sim((await como('i1', `select * from public.leads`)).rows.length === 0), true)
 espera('indicador não lê a tabela de vendas direto', sim((await como('i1', `select * from public.vendas`)).rows.length === 0), true)
-await db.query(`update public.config_split set aliquota_pf = null where id = 1`)
-const semImposto = (await como('i1', `select estimativa from public.vendas_indicador()`)).rows[0].estimativa
-espera(`imposto não definido: estimativa sem desconto de imposto (${semImposto})`, sim(Number(semImposto) === 600), true)
-espera('consultor vê quanto repassar a cada indicador', sim(Number((await como('c1', `select a_repassar from public.meus_indicadores() where id = $1`, [u.i1])).rows[0]?.a_repassar) === 600), true)
+espera('consultor vê quanto repassar a cada indicador', sim(Number((await como('c1', `select a_repassar from public.meus_indicadores() where id = $1`, [u.i1])).rows[0]?.a_repassar) === 435), true)
+espera('venda aprovada sem bonificação usa a padrão (100%)', sim(Number((await um(`select bonificacao_pct from public.vendas where lead_id = $1`, [L])).bonificacao_pct) === 100), true)
+await db.query(`update public.config_split set aliquota_pf = 10 where id = 1`)
+const guardada = (await como('i1', `select estimativa from public.vendas_indicador()`)).rows[0].estimativa
+espera(`mudar o imposto não muda venda já registrada (${guardada})`, sim(Number(guardada) === 435), true)
+await db.query(`update public.config_split set aliquota_pf = 27.5 where id = 1`)
+espera('bonificação acima de 1000% é bloqueada', await reg('aprovado', 1200, k1.codigo, 'c1', L, hoje, 2000), false, 'bonificação')
+
+// --- Split do exemplo do Eduardo (31/10/2026) ---
+// PF, R$ 400, bonificação 100%: líquido 290 → indicador 145; bolo 145 + 290 = 435 → consultor 217,50 e Geralindica 217,50.
+await reg('aprovado', 400, k1.codigo, 'c1', L, hoje, 100)
+const ex = (await como('admin', `select * from public.admin_vendas() where cliente = 'Cliente' and consultor = 'Cons 1'`)).rows?.[0]
+espera(`exemplo PF R$ 400: indicador 145 e Geralindica 217,50 (${ex?.estimativa_indicador} / ${ex?.estimativa_geralindica})`,
+  sim(Number(ex?.estimativa_indicador) === 145 && Number(ex?.estimativa_geralindica) === 217.5 && Number(ex?.aliquota) === 27.5), true)
+const sp = await um(`select * from private.split_venda(400, 27.5, 100)`)
+espera(`consultor fica com 217,50 (${sp.consultor})`, sim(Number(sp.consultor) === 217.5 && Number(sp.bonificacao) === 290), true)
+const pj = await um(`select * from private.split_venda(400, 6, 100)`)
+espera(`PJ 6%: indicador 188, consultor e Geralindica 282 cada (${pj.indicador} / ${pj.consultor} / ${pj.geralindica})`,
+  sim(Number(pj.indicador) === 188 && Number(pj.consultor) === 282 && Number(pj.geralindica) === 282), true)
+espera('consultor vira PJ com CNPJ válido', await como('c2', `update public.profiles set tipo_pessoa = 'PJ', documento = '11.222.333/0001-81' where id = auth.uid()`), true)
+espera('consultor escolhe a faixa 2 do PJ', await como('c2', `update public.consultores set faixa_pj = 2 where id = auth.uid()`), true)
+espera('consultor PJ faixa 2 paga 15,5%', sim(Number((await um(`select private.aliquota_consultor($1) a`, [u.c2])).a) === 15.5), true)
+espera('faixa do PJ só 1 ou 2', await como('c2', `update public.consultores set faixa_pj = 3 where id = auth.uid()`), false)
+
+// --- QR Code abre o WhatsApp do consultor ---
+const zap = async () => (await como(null, `select * from public.registrar_escaneamento($1)`, [k1.codigo])).rows?.[0]?.whatsapp
+const geral = (await um(`select whatsapp_numero from public.config_split where id = 1`)).whatsapp_numero
+espera(`consultor sem telefone: QR usa o número geral (${await zap()})`, sim((await zap()) === geral), true)
+await como('c1', `update public.profiles set telefone = '(19) 98888-7777' where id = auth.uid()`)
+espera(`QR abre o WhatsApp do consultor (${await zap()})`, sim((await zap()) === '5519988887777'), true)
+espera('indicador fala com o próprio consultor', sim((await como('i1', `select public.whatsapp_meu_consultor() z`)).rows?.[0]?.z === '5519988887777'), true)
+espera('QR com código inexistente não abre nada', sim((await como(null, `select * from public.registrar_escaneamento('NAOEXISTE')`)).rows.length === 0), true)
+
 await reg('reprovado', 1200)
 espera('venda reprovada não gera valor a receber', sim(Number((await como('i1', `select estimativa from public.vendas_indicador()`)).rows[0].estimativa) === 0), true)
 espera('venda reprovada sai das métricas', sim((await um(`select vendas from public.consultores where id = $1`, [u.c1])).vendas === 0), true)

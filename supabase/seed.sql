@@ -228,6 +228,10 @@ select l.consultor_id, l.id, l.indicador_id, l.canal_id, split_part(l.nome, ' ',
 from public.leads l
 where l.etapa in ('custodia','entrevista','aprovado','reprovado') and l.valor_adesao > 0;
 
+-- Imposto do consultor gravado na venda e bonificação de 100% nas aprovadas (exemplo).
+update public.vendas set aliquota = coalesce(private.aliquota_consultor(consultor_id), 0),
+  bonificacao_pct = case when status = 'aprovado' then 100 end;
+
 select private.recalc_consultor(id) from public.consultores;
 
 drop function private.seed_user(text, jsonb);
