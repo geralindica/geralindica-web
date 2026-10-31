@@ -1,22 +1,33 @@
 // Regras de negócio puras da Geralindica. Nada de valor escrito à mão nas telas:
-// tudo passa por estas funções (a mesma fórmula do indicador existe no banco, em private.estimativa_indicador()).
+// tudo passa por estas funções (a mesma conta existe no banco, em private.split_venda()).
 // A plataforma não movimenta dinheiro: os valores aqui são estimativas do que o consultor repassa por fora.
-import type { Consultor, ConsultorRow, Etapa, StatusVenda } from './types'
+import type { ConfigSplit, Consultor, ConsultorRow, Etapa, StatusVenda, TipoPessoa } from './types'
 
 export const round2 = (v: number) => Math.round(v * 100) / 100
 
 /**
- * Split de uma venda: valor − imposto = líquido → % indicador / restante (consultor + Geralindica).
- * Os percentuais vêm da configuração do admin (config_split). Imposto não definido conta como zero;
- * divisão consultor x Geralindica não definida devolve null nessas duas partes.
+ * Split de uma venda (definido em 31/10/2026). O imposto é o do CONSULTOR. Ex.: PF, R$ 400, bonificação 100%:
+ * 400 − 27,5% = 290 de líquido → 145 para o indicador; bonificação 400 − 27,5% = 290;
+ * bolo = 145 (parte do consultor na adesão) + 290 = 435 → 217,50 consultor e 217,50 Geralindica.
+ * Imposto não definido conta como zero; divisão consultor x Geralindica não definida devolve null nessas duas partes.
  */
-export function calcularSplit(bruto: number, aliquotaPct: number | null, pctIndicador: number, pctConsultorDoResto: number | null) {
-  const imposto = round2((bruto * (aliquotaPct ?? 0)) / 100)
-  const liquido = round2(bruto - imposto)
+export function calcularSplit(valor: number, aliquotaPct: number | null, pctIndicador: number, pctConsultor: number | null, bonificacaoPct: number | null = 0) {
+  const fator = 1 - (aliquotaPct ?? 0) / 100
+  const liquido = round2(valor * fator)
+  const imposto = round2(valor - liquido)
   const indicador = round2((liquido * pctIndicador) / 100)
-  const resto = round2(liquido - indicador)
-  const consultor = pctConsultorDoResto == null ? null : round2((resto * pctConsultorDoResto) / 100)
-  return { bruto, imposto, liquido, indicador, resto, consultor, plataforma: consultor == null ? null : round2(resto - consultor) }
+  const consultorAdesao = round2(liquido - indicador)
+  const bonificacaoBruta = round2((valor * (bonificacaoPct ?? 0)) / 100)
+  const bonificacao = round2(((valor * (bonificacaoPct ?? 0)) / 100) * fator)
+  const bolo = round2(consultorAdesao + bonificacao)
+  const consultor = pctConsultor == null ? null : round2((bolo * pctConsultor) / 100)
+  return { valor, imposto, liquido, indicador, consultorAdesao, bonificacaoBruta, bonificacao, bolo, consultor, geralindica: consultor == null ? null : round2(bolo - consultor) }
+}
+
+/** Imposto do consultor pela configuração: PF, ou PJ na faixa 1 ou 2. */
+export function aliquotaDoConsultor(cfg: ConfigSplit, tipo: TipoPessoa, faixaPJ: 1 | 2 = 1) {
+  if (tipo === 'PJ') return faixaPJ === 2 ? cfg.aliquota_pj_2 : cfg.aliquota_pj
+  return cfg.aliquota_pf
 }
 
 export const primeiroNome = (nome: string) => nome.trim().split(/\s+/)[0] ?? ''

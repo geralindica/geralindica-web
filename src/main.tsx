@@ -29,6 +29,7 @@ const Leads = lazy(() => import('@/pages/consultor/Leads').then((m) => ({ defaul
 const LeadDetalhe = lazy(() => import('@/pages/consultor/LeadDetalhe').then((m) => ({ default: m.LeadDetalhe })))
 const MeusIndicadores = lazy(() => import('@/pages/consultor/MeusIndicadores').then((m) => ({ default: m.MeusIndicadores })))
 const PerfilPublico = lazy(() => import('@/pages/consultor/PerfilPublico').then((m) => ({ default: m.PerfilPublico })))
+const DadosConsultor = lazy(() => import('@/pages/consultor/MeusDados').then((m) => ({ default: m.MeusDados })))
 const AdminLayout = lazy(() => import('@/pages/admin/AdminLayout').then((m) => ({ default: m.AdminLayout })))
 const Vendas = lazy(() => import('@/pages/admin/Vendas').then((m) => ({ default: m.Vendas })))
 const Split = lazy(() => import('@/pages/admin/Split').then((m) => ({ default: m.Split })))
@@ -85,6 +86,7 @@ createRoot(document.getElementById('root')!).render(
                 <Route path="leads/:id" element={<LeadDetalhe />} />
                 <Route path="indicadores" element={<MeusIndicadores />} />
                 <Route path="perfil" element={<PerfilPublico />} />
+                <Route path="dados" element={<DadosConsultor />} />
               </Route>
               <Route
                 path="admin"

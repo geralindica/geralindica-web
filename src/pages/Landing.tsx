@@ -128,7 +128,7 @@ function Simulador() {
         <Eyebrow>Simulador de ganhos</Eyebrow>
         <h2 className={h2}>Quanto você pode ganhar por mês?</h2>
         <p className="m-0 text-[17px] leading-[1.55] text-ink-600">
-          Arraste para simular. Valores ilustrativos, para pessoa física.{semImposto && ' O imposto ainda está sendo definido, então a conta ainda não desconta imposto.'}</p>
+          Arraste para simular. Valores ilustrativos, com consultor pessoa física.{semImposto && ' O imposto ainda está sendo definido, então a conta ainda não desconta imposto.'}</p>
       </div>
       <div className="flex flex-col gap-7 rounded-[28px] border border-ink-200 bg-white p-6 shadow-md sm:p-8">
         <div className="flex flex-col gap-3">
@@ -175,7 +175,7 @@ function Split() {
           <Eyebrow className="text-verde-300">Transparência do split</Eyebrow>
           <h2 className={h2}>Metade do lucro líquido é sua. Sem letra miúda.</h2>
           <p className="m-0 text-[17px] leading-[1.6] text-ink-300">
-            Do valor da adesão sai o imposto. Do que sobra, {c ? pct(c.pct_indicador) : 'metade'} é seu. Quem paga é o consultor, por Pix, depois da entrevista de saúde aprovada. A Geralindica não segura o seu dinheiro: você acompanha cada venda no painel.
+            Do valor da adesão sai o imposto do consultor. Do que sobra, {c ? pct(c.pct_indicador) : 'metade'} é seu. Quem paga é o consultor, por Pix, depois da entrevista de saúde aprovada. A Geralindica não segura o seu dinheiro: você acompanha cada venda no painel.
           </p>
         </div>
         <div className="flex flex-col gap-[14px] rounded-[24px] bg-white p-7 text-ink-950">
@@ -185,7 +185,7 @@ function Split() {
             <span className="font-bold">{brl(1000)}</span>
           </div>
           <div className="flex justify-between text-[15px]">
-            <span className="text-ink-600">{!c ? 'Imposto' : c.aliquota_pf == null ? 'Imposto (a definir)' : `Imposto (${pct(c.aliquota_pf)} PF)`}</span>
+            <span className="text-ink-600">{!c ? 'Imposto' : c.aliquota_pf == null ? 'Imposto (a definir)' : `Imposto (${pct(c.aliquota_pf)}, consultor PF)`}</span>
             <span className="font-bold text-vermelho-fg">− {v(r?.imposto)}</span>
           </div>
           <div className="border-t border-dashed border-ink-200" />
@@ -195,7 +195,7 @@ function Split() {
           </div>
           <div className="my-1.5 flex h-3 gap-[3px] overflow-hidden rounded-full">
             <div className="bg-verde-600" style={{ flex: r?.indicador || 1 }} />
-            <div className="bg-ink-800" style={{ flex: r?.resto || 1 }} />
+            <div className="bg-ink-800" style={{ flex: r?.consultorAdesao || 1 }} />
           </div>
           <div className="grid grid-cols-2 gap-[10px]">
             <div className="rounded-[14px] bg-verde-50 p-[14px]">
@@ -204,7 +204,7 @@ function Split() {
             </div>
             <div className="rounded-[14px] bg-ink-50 p-[14px]">
               <div className="text-[12px] font-bold text-ink-600">Consultor + Geralindica</div>
-              <div className="text-[20px] font-extrabold sm:text-[24px]">{v(r?.resto)}</div>
+              <div className="text-[20px] font-extrabold sm:text-[24px]">{v(r?.consultorAdesao)}</div>
             </div>
           </div>
         </div>

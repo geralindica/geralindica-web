@@ -3,20 +3,18 @@ import { useMutation } from '@tanstack/react-query'
 import { Info } from 'lucide-react'
 import { supabase, mensagemErro } from '@/lib/supabase'
 import { useAuth, usePerfil } from '@/auth/AuthProvider'
-import { useConfig } from '@/data/queries'
-import { cnpjValido, formatarCNPJ, pct } from '@/lib/negocio'
+import { cnpjValido, formatarCNPJ } from '@/lib/negocio'
 import type { TipoPessoa } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/form'
 import { Card, Segmentado } from '@/components/painel/comum'
 import { useToast } from '@/components/ui/feedback'
 
-/** Dados do indicador: PF ou PJ (muda o imposto da estimativa). O Pix é combinado direto com o consultor. */
+/** Dados do indicador: PF ou PJ (cadastro). O imposto da conta é o do consultor. O Pix é combinado direto com ele. */
 export function MeusDados() {
   const p = usePerfil()
   const { refreshProfile } = useAuth()
   const toast = useToast()
-  const config = useConfig()
   const [cnpj, setCnpj] = useState(p.tipo_pessoa === 'PJ' ? (p.documento ?? '') : '')
   const [querPJ, setQuerPJ] = useState(false)
 
@@ -32,8 +30,6 @@ export function MeusDados() {
     },
     onError: (e) => toast(mensagemErro(e), 'erro'),
   })
-
-  const aliquota = config.data ? (p.tipo_pessoa === 'PJ' ? config.data.aliquota_pj : config.data.aliquota_pf) : null
 
   return (
     <>
@@ -70,9 +66,7 @@ export function MeusDados() {
           </form>
         )}
         <p className="m-0 text-[13px] leading-[1.5] text-ink-600">
-          {aliquota == null
-            ? 'O imposto ainda está sendo definido pela Geralindica. Por enquanto, as estimativas não descontam imposto.'
-            : `Imposto usado na estimativa para ${p.tipo_pessoa}: ${pct(aliquota)} sobre o valor da adesão.`}
+          Isso não muda o seu valor: o imposto descontado antes da divisão é o do consultor, porque é ele quem recebe do cliente.
         </p>
       </Card>
 

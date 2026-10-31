@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, ArrowRight, Check, ChevronRight, Info, Loader2, MessageCircle, Star, ArrowLeftRight } from 'lucide-react'
 import { supabase, mensagemErro } from '@/lib/supabase'
 import { usePerfil } from '@/auth/AuthProvider'
-import { useAvaliacoes, useConfig, useConsultores } from '@/data/queries'
+import { useAvaliacoes, useConsultores } from '@/data/queries'
 import { linkWhatsApp } from '@/integrations'
 import { dataBR } from '@/lib/negocio'
 import type { Consultor } from '@/lib/types'
@@ -22,7 +22,15 @@ export function MeuConsultor() {
   const vinculo = useMeuVinculo()
   const cons = useConsultores()
   const funil = useFunil()
-  const config = useConfig()
+  // WhatsApp do consultor atual (sem telefone cadastrado, o banco devolve o número geral da Geralindica).
+  const zapConsultor = useQuery({
+    queryKey: ['ind', 'zap-consultor', vinculo.data?.consultor_id ?? null],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('whatsapp_meu_consultor')
+      if (error) throw error
+      return data as string | null
+    },
+  })
   const [fase, setFase] = useState<Fase>('idle')
   const [novo, setNovo] = useState<Consultor | null>(null)
 
@@ -149,7 +157,7 @@ export function MeuConsultor() {
 
   // idle com consultor
   const c = atual!
-  const zap = config.data ? linkWhatsApp(config.data.whatsapp_numero, `Olá! Sou ${p.nome}, indicador(a) da Geralindica, e quero falar com ${c.nome_exibicao}.`) : undefined
+  const zap = zapConsultor.data ? linkWhatsApp(zapConsultor.data, `Olá! Sou ${p.nome}, indicador(a) da Geralindica, e quero falar com ${c.nome_exibicao}.`) : undefined
   return (
     <>
       <h1 className="m-0 text-[24px] font-extrabold tracking-[-0.03em]">Meu consultor</h1>

@@ -46,6 +46,8 @@ export type ConsultorRow = {
   /** Reputação pública de 0 a 100 (calculada no banco, em private.calcular_temperatura). */
   temperatura: number
   administradora: string | null
+  /** Consultor PJ: faixa de imposto (1 = aliquota_pj, 2 = aliquota_pj_2). */
+  faixa_pj: 1 | 2
 }
 
 /** Consultor já com ranking e campos derivados para a interface. */
@@ -114,6 +116,10 @@ export type Venda = {
   valor_adesao: number
   data_venda: string
   status: StatusVenda
+  /** Imposto do consultor gravado ao registrar a venda (%). */
+  aliquota: number
+  /** Bonificação da operadora depois do Verdinho (% do valor da adesão). */
+  bonificacao_pct: number | null
   created_at: string
   updated_at: string
 }
@@ -130,11 +136,16 @@ export type Canal = {
 
 export type ConfigSplit = {
   id: number
-  /** null = ainda não definido (o admin preenche em Admin → Split). */
+  /** Imposto do consultor. null = ainda não definido (o admin preenche em Admin → Split). */
   aliquota_pf: number | null
+  /** PJ, faixa 1 e faixa 2. */
   aliquota_pj: number | null
+  aliquota_pj_2: number | null
   pct_indicador: number
+  /** Do bolo (parte do consultor na adesão + bonificação líquida), % do consultor; o resto é da Geralindica. */
   pct_consultor_restante: number | null
+  /** Bonificação sugerida ao registrar venda aprovada (% do valor da adesão). */
+  bonificacao_padrao: number | null
   whatsapp_numero: string
 }
 

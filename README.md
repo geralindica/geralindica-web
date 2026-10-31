@@ -56,7 +56,7 @@ supabase/
 ## Regras de negócio (aplicadas no banco)
 
 - **Sem dinheiro na plataforma**: o consultor atende o cliente, recebe a adesão, segura até a entrevista de saúde (Verdinho), devolve se reprovado e faz os Pix do indicador e da Geralindica por fora. Na plataforma ele só **registra a venda** (`registrar_venda()`).
-- **Split**: valor − imposto = líquido → % do indicador (hoje 50%) / restante consultor + Geralindica. Tudo configurável em Admin → Split; campo vazio = ainda não definido. O valor mostrado ao indicador é só estimativa.
+- **Split**: valor − imposto do consultor (PF 27,5%; PJ 6% ou 15,5%) = líquido → 50% do indicador. A outra metade fica com o consultor, que soma a bonificação da operadora (também sem imposto) e divide esse bolo com a Geralindica. Ex.: PF, R$ 400, bonificação 100% → indicador R$ 145, consultor R$ 217,50, Geralindica R$ 217,50. Tudo configurável em Admin → Split. Os valores na plataforma são só estimativa.
 - **Temperatura**: reputação pública do consultor (0 a 100), em `private.calcular_temperatura()` (fórmula provisória: vendas aprovadas registradas, avaliações e vendas dos últimos 30 dias).
 - **LGPD**: o indicador não lê leads nem vendas; vê `vendas_indicador()`, que só devolve primeiro nome, data, canal, status e valores.
 - **Vagas**: no máximo 30 indicadores por consultor; trocar para um consultor lotado é bloqueado.
@@ -75,5 +75,5 @@ Veja `src/integrations/README.md`. O QR Code → WhatsApp é real; o Gov.br é s
 
 1. **E-mail de confirmação**: o servidor de e-mail padrão do Supabase só envia para membros da equipe e tem limite baixo. Para cadastro público, configure um SMTP (ex.: Resend) em Authentication → Emails, ou desligue "Confirm email" em Authentication → Providers → Email.
 2. **Senhas vazadas**: ligar "Leaked password protection" em Authentication → Policies.
-3. **WhatsApp geral**: cadastrar o número real em Admin → Split e configurações.
+3. **WhatsApp**: cada consultor cadastra o dele em Meus dados (o QR abre nele); o número geral de reserva fica em Admin → Split e configurações.
 4. **Termos e privacidade**: os textos em `/termos` e `/privacidade` são rascunhos para revisão jurídica.

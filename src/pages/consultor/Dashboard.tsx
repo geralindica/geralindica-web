@@ -124,8 +124,18 @@ export function Dashboard() {
             </span>
             <span className="text-[30px] font-extrabold tracking-[-0.03em]">{brl(d.aprovado)}</span>
             <span className="text-[12px] font-semibold text-verde-100">
-              {d.aprovadoQtd} {d.aprovadoQtd === 1 ? 'adesão aprovada' : 'adesões aprovadas'} neste mês · faça os Pix do indicador e da Geralindica
+              {d.aprovadoQtd} {d.aprovadoQtd === 1 ? 'adesão aprovada' : 'adesões aprovadas'} neste mês
             </span>
+            <div className="mt-1 flex flex-col gap-1 rounded-[12px] bg-verde-700/40 px-3 py-2.5 text-[13px] font-semibold">
+              <div className="flex justify-between">
+                <span className="text-verde-100">Pix aos indicadores</span>
+                <span className="font-extrabold">{brl(d.pixIndicadores)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-verde-100">Pix à Geralindica (com a bonificação)</span>
+                <span className="font-extrabold">{d.pixGeralindica == null ? 'a definir' : brl(d.pixGeralindica)}</span>
+              </div>
+            </div>
           </div>
           <Card className="flex flex-col gap-1.5 p-5">
             <span className="flex items-center gap-1.5 text-[13px] font-bold text-ambar-fg">

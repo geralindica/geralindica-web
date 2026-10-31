@@ -236,9 +236,11 @@ export function Cadastro() {
               </div>
               <div className="flex items-start gap-[10px] rounded-[14px] bg-ink-50 px-4 py-[14px] text-[13px] leading-[1.5] text-ink-600">
                 <Info size={20} className="shrink-0 text-verde-700" />
-                {pj
-                  ? 'Como PJ, o imposto descontado da comissão segue o seu enquadramento. Informe um CNPJ válido.'
-                  : 'Como PF, o imposto é descontado do valor da adesão antes da divisão. O seu consultor manda a sua parte por Pix.'}
+                {isInd
+                  ? 'O imposto descontado antes da divisão é o do consultor, que recebe do cliente. Ele manda a sua parte por Pix.'
+                  : pj
+                    ? 'Como PJ, o imposto das suas vendas segue a sua faixa (você escolhe em Meus dados). Informe um CNPJ válido.'
+                    : 'Como PF, o imposto das suas vendas é descontado antes da divisão com o indicador e com a Geralindica.'}
               </div>
             </div>
           )}

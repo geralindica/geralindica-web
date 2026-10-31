@@ -1,4 +1,4 @@
-import { KanbanSquare, LayoutDashboard, Store, Users } from 'lucide-react'
+import { IdCard, KanbanSquare, LayoutDashboard, Store, Users } from 'lucide-react'
 import { PainelLayout, type NavItem } from '@/components/painel/PainelLayout'
 import { useConsultores } from '@/data/queries'
 import { usePerfil } from '@/auth/AuthProvider'
@@ -18,6 +18,7 @@ export function ConsultorLayout() {
     { to: '/consultor/leads', label: 'Leads', icon: KanbanSquare, badge: ativos || undefined },
     { to: '/consultor/indicadores', label: 'Meus indicadores', short: 'Indicadores', icon: Users },
     { to: '/consultor/perfil', label: 'Perfil público', short: 'Perfil', icon: Store },
+    { to: '/consultor/dados', label: 'Meus dados', short: 'Dados', icon: IdCard },
   ]
 
   const c = me.data

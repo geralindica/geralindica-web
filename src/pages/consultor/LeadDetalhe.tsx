@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, CheckCircle2, Eye, EyeOff, Handshake, Loader2, MessageCircle, MessagesSquare, StickyNote, TriangleAlert, User, type LucideIcon } from 'lucide-react'
 import { supabase, mensagemErro } from '@/lib/supabase'
 import { brl } from '@/lib/utils'
-import { ETAPAS, STATUS_VENDA_OPCOES, corEtapa, dataBR, dataHoraBR, iniciais, mascararCPFCompleto, mascararTelefoneCompleto, nomeEtapa, primeiroNome } from '@/lib/negocio'
+import { ETAPAS, STATUS_VENDA_OPCOES, aliquotaDoConsultor, calcularSplit, corEtapa, dataBR, dataHoraBR, iniciais, mascararCPFCompleto, mascararTelefoneCompleto, nomeEtapa, primeiroNome } from '@/lib/negocio'
 import type { Etapa, LeadComOrigem, LeadEvento, StatusVenda, Venda } from '@/lib/types'
 import { linkWhatsApp, numeroInternacional } from '@/integrations'
 import { Button } from '@/components/ui/button'
@@ -12,7 +12,9 @@ import { StatusBadge } from '@/components/ui/badges'
 import { Card } from '@/components/painel/comum'
 import { Field } from '@/components/ui/form'
 import { Carregando, ErroBox, Vazio, useToast } from '@/components/ui/feedback'
-import { useLead } from './dados'
+import { usePerfil } from '@/auth/AuthProvider'
+import { useConfig } from '@/data/queries'
+import { useLead, useMeuConsultor } from './dados'
 
 const ICONE_EVENTO: Record<LeadEvento['tipo'], { icon: LucideIcon; bg: string; fg: string }> = {
   consultor: { icon: User, bg: '#EAEFF5', fg: '#1F2E45' },
@@ -265,8 +267,18 @@ function RegistrarVenda({ lead, venda }: { lead: LeadComOrigem; venda: Venda | n
     valor: venda ? String(venda.valor_adesao).replace('.', ',') : lead.valor_adesao ? String(lead.valor_adesao).replace('.', ',') : '',
     data: venda?.data_venda ?? hojeISO,
     status: statusInicial,
+    bonif: venda?.bonificacao_pct != null ? String(Number(venda.bonificacao_pct)).replace('.', ',') : '',
   })
   const toast = useToast()
+  const perfil = usePerfil()
+  const me = useMeuConsultor()
+  const config = useConfig()
+  const cfg = config.data
+  // Bonificação vazia numa venda aprovada: o banco usa a sugerida em Admin → Split.
+  const bonifTexto = f.bonif.trim() === '' && f.status === 'aprovado' && cfg?.bonificacao_padrao != null ? String(cfg.bonificacao_padrao) : f.bonif
+  const valorNum = Number(f.valor.replace(/\./g, '').replace(',', '.')) || 0
+  const aliq = cfg ? aliquotaDoConsultor(cfg, perfil.tipo_pessoa, me.data?.faixa_pj ?? 1) : null
+  const previa = cfg ? calcularSplit(valorNum, aliq, cfg.pct_indicador, cfg.pct_consultor_restante, Number(bonifTexto.replace(',', '.')) || 0) : null
   const salvar = useAcao(lead.id, async () => {
     const v = Number(f.valor.replace(/\./g, '').replace(',', '.'))
     const { error } = await supabase.rpc('registrar_venda', {
@@ -276,6 +288,7 @@ function RegistrarVenda({ lead, venda }: { lead: LeadComOrigem; venda: Venda | n
       p_valor: v,
       p_data: f.data,
       p_status: f.status,
+      p_bonificacao: f.bonif.trim() === '' ? null : Number(f.bonif.replace(',', '.')),
     })
     if (error) throw error
   }, () => (f.status === 'aprovado' ? 'Venda registrada. Agora faça o Pix do indicador e da Geralindica.' : 'Venda registrada.'))
@@ -339,8 +352,41 @@ function RegistrarVenda({ lead, venda }: { lead: LeadComOrigem; venda: Venda | n
               ))}
             </select>
           </label>
+          {f.status === 'aprovado' && (
+            <Field
+              label="Bonificação da operadora (% da adesão)"
+              value={f.bonif}
+              inputMode="decimal"
+              placeholder={cfg?.bonificacao_padrao != null ? `${String(cfg.bonificacao_padrao).replace('.', ',')} (sugerida)` : ''}
+              onChange={(e) => setF({ ...f, bonif: e.target.value.replace(/[^\d,.]/g, '') })}
+            />
+          )}
+          {previa && valorNum > 0 && f.status !== 'reprovado' && (
+            <div className="flex flex-col gap-1 rounded-[12px] bg-ink-50 px-3 py-2.5 text-[13px]">
+              <div className="flex justify-between">
+                <span className="text-ink-600">Seu imposto ({aliq == null ? 'a definir' : `${String(aliq).replace('.', ',')}%`})</span>
+                <span className="font-bold">− {brl(previa.imposto)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-ink-600">Pix ao indicador</span>
+                <span className="font-extrabold text-verde-700">{brl(previa.indicador)}</span>
+              </div>
+              {f.status === 'aprovado' && (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-ink-600">Pix à Geralindica</span>
+                    <span className="font-extrabold">{previa.geralindica == null ? 'a definir' : brl(previa.geralindica)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-ink-600">Fica com você (com a bonificação)</span>
+                    <span className="font-bold">{previa.consultor == null ? 'a definir' : brl(previa.consultor)}</span>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
           <p className="m-0 text-[12px] leading-[1.45] text-ink-600">
-            O dinheiro fica com você até a entrevista de saúde. Reprovado: devolva ao cliente. Aprovado: faça o Pix da parte do indicador e da Geralindica.
+            O dinheiro fica com você até a entrevista de saúde. Reprovado: devolva ao cliente. Aprovado: faça o Pix do indicador e, quando a bonificação cair, o da Geralindica.
           </p>
           <div className="flex gap-2">
             <Button type="button" variant="outline" size="sm" className="h-[42px] flex-1" onClick={() => setAberto(false)}>

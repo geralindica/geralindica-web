@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/painel/comum'
 import { Carregando, ErroBox, Vazio } from '@/components/ui/feedback'
 
-type LinhaVenda = { id: string; data_venda: string; created_at: string; cliente: string; consultor: string; indicador: string; valor_adesao: number; estimativa_indicador: number; status: StatusVenda }
+type LinhaVenda = { id: string; data_venda: string; created_at: string; cliente: string; consultor: string; indicador: string; valor_adesao: number; aliquota: number; bonificacao_pct: number | null; estimativa_indicador: number; estimativa_geralindica: number | null; status: StatusVenda }
 type ConsultorTemp = { id: string; nome_exibicao: string; temperatura: number; vendas: number; vendas_30d: number; ocupacao: number; max_indicadores: number; publicado: boolean }
 
 const FILTROS: { k: StatusVenda | 'todos'; label: string }[] = [
@@ -32,7 +32,14 @@ export function Vendas() {
     queryFn: async () => {
       const { data, error } = await supabase.rpc('admin_vendas')
       if (error) throw error
-      return ((data ?? []) as LinhaVenda[]).map((v) => ({ ...v, valor_adesao: Number(v.valor_adesao), estimativa_indicador: Number(v.estimativa_indicador) }))
+      return ((data ?? []) as LinhaVenda[]).map((v) => ({
+        ...v,
+        valor_adesao: Number(v.valor_adesao),
+        aliquota: Number(v.aliquota),
+        bonificacao_pct: v.bonificacao_pct == null ? null : Number(v.bonificacao_pct),
+        estimativa_indicador: Number(v.estimativa_indicador),
+        estimativa_geralindica: v.estimativa_geralindica == null ? null : Number(v.estimativa_geralindica),
+      }))
     },
   })
   const consultores = useQuery({
@@ -55,10 +62,10 @@ export function Vendas() {
   const reprovadas = soma('reprovado')
 
   const exportar = () => {
-    const cab = ['id', 'data_venda', 'registrada_em', 'cliente', 'consultor', 'indicador', 'valor_adesao', 'estimativa_indicador', 'status']
+    const cab = ['id', 'data_venda', 'registrada_em', 'cliente', 'consultor', 'indicador', 'valor_adesao', 'imposto_consultor_pct', 'bonificacao_pct', 'estimativa_indicador', 'estimativa_geralindica', 'status']
     const csv = [
       cab,
-      ...linhas.map((v) => [v.id, dataBR(v.data_venda + 'T12:00'), dataBR(v.created_at), v.cliente, v.consultor, v.indicador, v.valor_adesao.toFixed(2).replace('.', ','), v.estimativa_indicador.toFixed(2).replace('.', ','), STATUS_VENDA[v.status].label]),
+      ...linhas.map((v) => [v.id, dataBR(v.data_venda + 'T12:00'), dataBR(v.created_at), v.cliente, v.consultor, v.indicador, dec(v.valor_adesao), dec(v.aliquota), v.bonificacao_pct == null ? '' : dec(v.bonificacao_pct), dec(v.estimativa_indicador), v.estimativa_geralindica == null ? '' : dec(v.estimativa_geralindica), STATUS_VENDA[v.status].label]),
     ]
       .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(';'))
       .join('\n')
@@ -93,7 +100,7 @@ export function Vendas() {
               Aprovadas (Verdinho)
             </span>
             <span className="text-[30px] font-extrabold tracking-[-0.03em]">{vendas.isLoading ? '…' : brl(aprovadas.reduce((a, v) => a + v.valor_adesao, 0))}</span>
-            <span className="text-[12px] font-semibold text-verde-100">{aprovadas.length} vendas · indicadores a receber {brl(aprovadas.reduce((a, v) => a + v.estimativa_indicador, 0))}</span>
+            <span className="text-[12px] font-semibold text-verde-100">{aprovadas.length} vendas · indicadores {brl(aprovadas.reduce((a, v) => a + v.estimativa_indicador, 0))} · Geralindica {brl(aprovadas.reduce((a, v) => a + (v.estimativa_geralindica ?? 0), 0))}</span>
           </div>
           <Kpi tom="ambar" icon={<Clock size={17} strokeWidth={2.6} />} rotulo="Aguardando entrevista" valor={brl(aguardando.reduce((a, v) => a + v.valor_adesao, 0))} sub={`${aguardando.length} com o consultor até a entrevista`} />
           <Kpi tom="vermelho" icon={<Undo2 size={17} />} rotulo="Reprovadas" valor={String(reprovadas.length)} sub="valor devolvido ao cliente pelo consultor" />
@@ -117,24 +124,31 @@ export function Vendas() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <div className="min-w-[820px]">
-              <div className="grid grid-cols-[96px_minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,1fr)_104px_124px_170px] gap-3 border-b border-ink-200 bg-ink-50 px-5 py-2.5 text-[12px] font-bold text-ink-600">
+            <div className="min-w-[940px]">
+              <div className="grid grid-cols-[96px_minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,1fr)_104px_110px_110px_170px] gap-3 border-b border-ink-200 bg-ink-50 px-5 py-2.5 text-[12px] font-bold text-ink-600">
                 <span>Data</span>
                 <span>Cliente</span>
                 <span>Consultor</span>
                 <span>Indicador</span>
                 <span className="text-right">Adesão</span>
-                <span className="text-right">Indicador (estim.)</span>
+                <span className="text-right">Indicador</span>
+                <span className="text-right">Geralindica</span>
                 <span>Status</span>
               </div>
               {linhas.slice(0, 300).map((r) => (
-                <div key={r.id} className="grid grid-cols-[96px_minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,1fr)_104px_124px_170px] items-center gap-3 border-b border-ink-100 px-5 py-3 text-[14px] last:border-b-0">
+                <div key={r.id} className="grid grid-cols-[96px_minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,1fr)_104px_110px_110px_170px] items-center gap-3 border-b border-ink-100 px-5 py-3 text-[14px] last:border-b-0">
                   <span className="text-[13px] font-semibold">{dataBR(r.data_venda + 'T12:00')}</span>
                   <span className="truncate font-bold">{r.cliente}</span>
                   <span className="truncate">{r.consultor}</span>
                   <span className="truncate">{r.indicador}</span>
                   <span className="text-right font-semibold">{brl(r.valor_adesao)}</span>
                   <span className={cn('text-right font-extrabold', r.status === 'reprovado' && 'text-ink-400')}>{brl(r.estimativa_indicador)}</span>
+                  <span
+                    className={cn('text-right font-extrabold', r.status !== 'aprovado' && 'text-ink-400')}
+                    title={r.status === 'aprovado' ? `Imposto ${dec(r.aliquota)}% · bonificação ${r.bonificacao_pct == null ? '—' : `${dec(r.bonificacao_pct)}%`}` : 'Só depois do Verdinho'}
+                  >
+                    {r.status === 'aprovado' ? (r.estimativa_geralindica == null ? 'a definir' : brl(r.estimativa_geralindica)) : '—'}
+                  </span>
                   <StatusBadge status={r.status} size="md" />
                 </div>
               ))}
@@ -176,11 +190,13 @@ export function Vendas() {
 
       <div className="flex items-start gap-1.5 text-[12px] font-semibold leading-[1.5] text-ink-400">
         <Info size={15} className="mt-px shrink-0" />
-        A plataforma não recebe nem paga nada: o consultor registra a venda e faz os Pix (indicador e Geralindica) por fora. A fórmula da temperatura é provisória.
+        A plataforma não recebe nem paga nada: o consultor registra a venda e faz os Pix por fora. A parte da Geralindica sai do bolo (parte do consultor na adesão + bonificação, sem o imposto dele), pela divisão de Admin → Split, e só vale depois do Verdinho. A fórmula da temperatura é provisória.
       </div>
     </>
   )
 }
+
+const dec = (n: number) => n.toFixed(2).replace('.', ',')
 
 function Kpi({ tom, icon, rotulo, valor, sub }: { tom: 'ambar' | 'vermelho'; icon: ReactNode; rotulo: string; valor: string; sub: string }) {
   const cor = { ambar: 'text-ambar-fg', vermelho: 'text-vermelho-fg' }[tom]
