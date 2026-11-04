@@ -128,7 +128,7 @@ export function LeadDetalhe() {
             <input
               value={codigo}
               onChange={(e) => setCodigo(e.target.value.toUpperCase())}
-              placeholder="Ex.: IDK7F3A2C"
+              placeholder="Ex.: GLI7F3A2C"
               aria-label="Código do canal"
               className="h-[42px] w-[180px] rounded-[10px] border border-[#F2C46A] bg-white px-3 font-mono text-[13px] outline-none"
             />
