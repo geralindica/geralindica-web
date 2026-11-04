@@ -13,7 +13,8 @@ export type Etapa =
   | 'reprovado'
   | 'perdido'
 
-export type StatusTx = 'pendente' | 'custodia' | 'verdinho' | 'repassado' | 'estornado'
+/** Venda registrada pelo consultor (o dinheiro nunca passa pela plataforma). */
+export type StatusVenda = 'aguardando_entrevista' | 'aprovado' | 'reprovado'
 
 export type Profile = {
   id: string
@@ -22,7 +23,6 @@ export type Profile = {
   tipo_pessoa: TipoPessoa
   documento: string | null
   telefone: string | null
-  chave_pix: string | null
   email: string | null
   contrato_assinado_em: string | null
   created_at: string
@@ -43,7 +43,11 @@ export type ConsultorRow = {
   leads_total: number
   vendas_30d: number
   ocupacao: number
+  /** Reputação pública de 0 a 100 (calculada no banco, em private.calcular_temperatura). */
+  temperatura: number
   administradora: string | null
+  /** Consultor PJ: faixa de imposto (1 = aliquota_pj, 2 = aliquota_pj_2). */
+  faixa_pj: 1 | 2
 }
 
 /** Consultor já com ranking e campos derivados para a interface. */
@@ -72,12 +76,6 @@ export type Lead = {
   plano: string | null
   valor_adesao: number | null
   etapa: Etapa
-  triagem: Record<string, string>
-  triagem_passo: number
-  abandonou_em: string | null
-  reengajado_em: string | null
-  desconto_pct: number | null
-  desconto_status: 'solicitado' | 'aprovado' | 'recusado' | null
   created_at: string
   updated_at: string
 }
@@ -90,22 +88,40 @@ export type LeadComOrigem = Lead & {
 export type LeadEvento = {
   id: string
   lead_id: string
-  tipo: 'robo' | 'pdf' | 'consultor' | 'cliente' | 'sistema' | 'nota'
+  tipo: 'consultor' | 'cliente' | 'sistema' | 'nota'
   texto: string
   created_at: string
 }
 
-export type ExtratoItem = {
-  transacao_id: string
-  primeiro_nome: string
-  data: string
+/** Venda vista pelo indicador: sem dado pessoal do cliente além do primeiro nome. */
+export type VendaIndicador = {
+  venda_id: string
+  cliente: string
+  data_venda: string
   canal: string | null
-  status: StatusTx
-  bruto: number
+  consultor: string
+  status: StatusVenda
+  valor_adesao: number
+  /** Quanto o consultor deve repassar ao indicador. Só informativo. */
+  estimativa: number
+}
+
+export type Venda = {
+  id: string
+  consultor_id: string
+  lead_id: string | null
+  indicador_id: string | null
+  canal_id: string | null
+  cliente: string
+  valor_adesao: number
+  data_venda: string
+  status: StatusVenda
+  /** Imposto do consultor gravado ao registrar a venda (%). */
   aliquota: number
-  comissao: number
-  cpf_final: string
-  tel_final: string
+  /** Bonificação da operadora depois do Verdinho (% do valor da adesão). */
+  bonificacao_pct: number | null
+  created_at: string
+  updated_at: string
 }
 
 export type Canal = {
@@ -118,14 +134,18 @@ export type Canal = {
   created_at: string
 }
 
-export type Saque = { id: string; indicador_id: string; valor: number; qtd: number; created_at: string }
-
 export type ConfigSplit = {
   id: number
-  aliquota_pf: number
-  aliquota_pj: number
+  /** Imposto do consultor. null = ainda não definido (o admin preenche em Admin → Split). */
+  aliquota_pf: number | null
+  /** PJ, faixa 1 e faixa 2. */
+  aliquota_pj: number | null
+  aliquota_pj_2: number | null
   pct_indicador: number
-  pct_consultor_restante: number
+  /** Do bolo (parte do consultor na adesão + bonificação líquida), % do consultor; o resto é da Geralindica. */
+  pct_consultor_restante: number | null
+  /** Bonificação sugerida ao registrar venda aprovada (% do valor da adesão). */
+  bonificacao_padrao: number | null
   whatsapp_numero: string
 }
 

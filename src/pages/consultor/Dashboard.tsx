@@ -1,16 +1,16 @@
 import type { ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ChevronRight, Clock, GitBranch, Handshake, Hourglass, KanbanSquare, Link2Off, Lock, Percent, Trophy, Users } from 'lucide-react'
+import { ChevronRight, Clock, GitBranch, Handshake, Hourglass, KanbanSquare, Link2Off, Percent, Thermometer, Users } from 'lucide-react'
 import { usePerfil } from '@/auth/AuthProvider'
 import { useConsultores } from '@/data/queries'
 import { brl } from '@/lib/utils'
 import { nomeEtapa, primeiroNome, tempoDesde, ETAPAS_FINAIS } from '@/lib/negocio'
 import { CheckCircleFilled } from '@/components/icons'
-import { HotBadge } from '@/components/ui/badges'
+import { TemperaturaBadge } from '@/components/ui/badges'
 import { buttonVariants } from '@/components/ui/button'
 import { Card } from '@/components/painel/comum'
 import { Carregando, ErroBox } from '@/components/ui/feedback'
-import { emRecuperacao, useDashboard, useLeadsCRM, useMeuConsultor } from './dados'
+import { useDashboard, useLeadsCRM, useMeuConsultor } from './dados'
 
 const DIA = 86400_000
 
@@ -30,13 +30,16 @@ export function Dashboard() {
     ? Math.round((ranking.data.reduce((a, c) => a + c.vendas, 0) * 100) / Math.max(1, ranking.data.reduce((a, c) => a + c.leads_total, 0)))
     : 0
 
-  const ativos = (leads.data ?? []).filter((l) => !ETAPAS_FINAIS.includes(l.etapa) && !emRecuperacao(l))
+  const ativos = (leads.data ?? []).filter((l) => !ETAPAS_FINAIS.includes(l.etapa))
   const agora = Date.now()
   const atencao = [
-    ...ativos.filter((l) => !l.canal_id).map((l) => ({ l, icon: Link2Off, tom: 'ambar', texto: 'Código do canal veio vazio. Confirme a atribuição.' })),
+    ...ativos.filter((l) => !l.canal_id).map((l) => ({ l, icon: Link2Off, tom: 'ambar', texto: 'Sem código do indicador. Confirme a atribuição.' })),
     ...ativos
       .filter((l) => l.etapa === 'custodia' && agora - new Date(l.updated_at).getTime() > 3 * DIA)
-      .map((l) => ({ l, icon: Hourglass, tom: 'ambar', texto: `Em custódia há ${tempoDesde(l.updated_at)}. Agendar entrevista com a Administradora.` })),
+      .map((l) => ({ l, icon: Hourglass, tom: 'ambar', texto: `Pagamento recebido há ${tempoDesde(l.updated_at)}. Agendar entrevista com a Administradora.` })),
+    ...ativos
+      .filter((l) => l.etapa === 'entrevista' && agora - new Date(l.updated_at).getTime() > 7 * DIA)
+      .map((l) => ({ l, icon: Hourglass, tom: 'ambar', texto: `Em entrevista há ${tempoDesde(l.updated_at)}. Registre o resultado da venda.` })),
     ...ativos
       .filter((l) => l.etapa === 'negociacao' && agora - new Date(l.updated_at).getTime() > 2 * DIA)
       .map((l) => ({ l, icon: Clock, tom: 'azul', texto: `Em negociação há ${tempoDesde(l.updated_at)} sem resposta.` })),
@@ -78,8 +81,11 @@ export function Dashboard() {
         <Kpi icon={<Percent size={19} className="text-azul-solid" />} rotulo="Taxa de conversão" valor={`${conv}%`}>
           <span className="text-ink-600">média da plataforma: {media}%</span>
         </Kpi>
-        <Kpi icon={<Trophy size={19} className="text-ambar-solid" />} rotulo="Posição no ranking" valor={eu ? `#${eu.rank}` : '–'} extra={eu?.hot ? <HotBadge /> : null}>
-          <span className="text-ink-600">{c.vendas} vendas aprovadas no total</span>
+        <Kpi icon={<Thermometer size={19} className="text-laranja-fg" />} rotulo="Sua temperatura" valor={`${c.temperatura}°`} extra={<TemperaturaBadge valor={c.temperatura} />}>
+          <span className="text-ink-600">
+            {eu ? `#${eu.rank} no ranking · ` : ''}
+            {c.vendas} vendas aprovadas registradas
+          </span>
         </Kpi>
         <Kpi icon={<Users size={19} />} rotulo="Vagas ocupadas" valor={String(c.ocupacao)} sufixo={`/${c.max_indicadores}`}>
           <div className="h-1.5 overflow-hidden rounded-full bg-ink-100">
@@ -114,20 +120,30 @@ export function Dashboard() {
           <div className="flex flex-col gap-1.5 rounded-[18px] bg-verde-600 p-5 text-white">
             <span className="flex items-center gap-1.5 text-[13px] font-bold text-verde-100">
               <CheckCircleFilled size={18} />
-              Liberado (Verdinho)
+              Vendas aprovadas (Verdinho)
             </span>
-            <span className="text-[30px] font-extrabold tracking-[-0.03em]">{brl(d.liberado)}</span>
+            <span className="text-[30px] font-extrabold tracking-[-0.03em]">{brl(d.aprovado)}</span>
             <span className="text-[12px] font-semibold text-verde-100">
-              {d.liberadoQtd} {d.liberadoQtd === 1 ? 'adesão aprovada' : 'adesões aprovadas'} neste mês
+              {d.aprovadoQtd} {d.aprovadoQtd === 1 ? 'adesão aprovada' : 'adesões aprovadas'} neste mês
             </span>
+            <div className="mt-1 flex flex-col gap-1 rounded-[12px] bg-verde-700/40 px-3 py-2.5 text-[13px] font-semibold">
+              <div className="flex justify-between">
+                <span className="text-verde-100">Pix aos indicadores</span>
+                <span className="font-extrabold">{brl(d.pixIndicadores)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-verde-100">Pix à Geralindica (com a bonificação)</span>
+                <span className="font-extrabold">{d.pixGeralindica == null ? 'a definir' : brl(d.pixGeralindica)}</span>
+              </div>
+            </div>
           </div>
           <Card className="flex flex-col gap-1.5 p-5">
             <span className="flex items-center gap-1.5 text-[13px] font-bold text-ambar-fg">
-              <Lock size={17} strokeWidth={2.6} />
-              Em custódia
+              <Hourglass size={17} strokeWidth={2.6} />
+              Com você até a entrevista
             </span>
-            <span className="text-[30px] font-extrabold tracking-[-0.03em]">{brl(d.custodia)}</span>
-            <span className="text-[12px] font-semibold text-ink-600">{d.custodiaQtd} aguardando entrevista de saúde</span>
+            <span className="text-[30px] font-extrabold tracking-[-0.03em]">{brl(d.aguardando)}</span>
+            <span className="text-[12px] font-semibold text-ink-600">{d.aguardandoQtd} aguardando entrevista de saúde · devolva ao cliente se reprovar</span>
           </Card>
         </div>
       </div>

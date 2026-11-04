@@ -1,15 +1,16 @@
 -- Geralindica · dados de demonstração
 -- Cria contas de teste, consultores da vitrine,
--- indicadores, histórico de leads/transações e os leads de exemplo do protótipo.
+-- indicadores, histórico de leads e vendas registradas e os leads de exemplo do protótipo.
+-- Modelo de 27/10/2026: sem robô, sem custódia e sem saque (o consultor registra as vendas).
 -- Rodar uma vez num banco recém-migrado.
 -- Antes, defina a senha das contas de teste na mesma sessão (não grave a senha aqui):
 --   set seed.demo_senha = '<senha>';
 -- e coloque a mesma senha em VITE_DEMO_SENHA no .env.local.
 --
 -- Contas principais:
---   admin@demo.indikei.com.br          (Plataforma · admin)
---   juliana.prado@demo.indikei.com.br  (Consultora #1)
---   carlos.mendes@demo.indikei.com.br  (Indicador da Juliana)
+--   admin@demo.geralindica.com.br          (Plataforma · admin)
+--   juliana.prado@demo.geralindica.com.br  (Consultora #1)
+--   carlos.mendes@demo.geralindica.com.br  (Indicador da Juliana)
 
 create or replace function private.seed_user(p_email text, p_meta jsonb) returns uuid
 language plpgsql security definer set search_path = public, extensions as $$
@@ -42,14 +43,14 @@ begin
   -- ===== Consultores =====
   create temp table s_cons (ordem int, nome text, cidade text, ph int, conv int, vendas int, ocup int, maxi int, nota numeric, susep text, bio text, tags text[], email text, recent int, gov boolean, id uuid) on commit drop;
   insert into s_cons values
-    (1,'Juliana Prado','Campinas, SP',774909,38,142,24,30,4.9,'10.2211.0934-1','Especialista em planos PME e famílias. Atendimento rápido pelo WhatsApp.',array['PME','Famílias','Adesão'],'juliana.prado@demo.indikei.com.br',8,true,null),
-    (2,'Rafael Monteiro','São Paulo, SP',220453,34,128,28,30,4.8,'10.1987.3321-6','Corretor há 12 anos. Foco em MEIs e motoristas de aplicativo.',array['MEI','Coparticipação'],'rafael.monteiro@demo.indikei.com.br',3,true,null),
-    (3,'Camila Rocha','Belo Horizonte, MG',415829,41,97,30,30,5.0,'10.2455.8812-3','Planos com obstetrícia e atendimento para gestantes.',array['Obstetrícia','Famílias'],'camila.rocha@demo.indikei.com.br',6,true,null),
-    (4,'Thiago Almeida','Curitiba, PR',1222271,29,88,12,30,4.7,'10.3012.4410-9','Comparo operadoras lado a lado e explico cada carência.',array['PF','Seniores'],'thiago.almeida@demo.indikei.com.br',2,true,null),
-    (5,'Fernanda Lima','Recife, PE',1239291,32,76,22,30,4.8,'10.2766.1205-4','Atendo comércios locais e suas equipes, de 2 a 30 vidas.',array['PME','Comércio'],'fernanda.lima@demo.indikei.com.br',3,true,null),
-    (6,'Bruno Carvalho','Rio de Janeiro, RJ',2379004,27,64,9,20,4.6,'10.3190.7781-2','Planos regionais com bom custo-benefício na Zona Norte e Baixada.',array['Municipal','Coparticipação'],'bruno.carvalho@demo.indikei.com.br',1,false,null),
-    (7,'Patrícia Nunes','Salvador, BA',733872,31,59,25,30,4.9,'10.2840.6634-7','Indicadores motoristas são minha maior carteira. Respondo em até 1h.',array['Motoristas','PF'],'patricia.nunes@demo.indikei.com.br',5,true,null),
-    (8,'Diego Santos','Porto Alegre, RS',1681010,25,41,6,20,4.5,'10.3301.0098-5','Começando forte em Porto Alegre, com muita vaga para indicadores.',array['PF','Adesão'],'diego.santos@demo.indikei.com.br',1,false,null);
+    (1,'Juliana Prado','Campinas, SP',774909,38,142,24,30,4.9,'10.2211.0934-1','Especialista em planos PME e famílias. Atendimento rápido pelo WhatsApp.',array['PME','Famílias','Adesão'],'juliana.prado@demo.geralindica.com.br',8,true,null),
+    (2,'Rafael Monteiro','São Paulo, SP',220453,34,128,28,30,4.8,'10.1987.3321-6','Corretor há 12 anos. Foco em MEIs e motoristas de aplicativo.',array['MEI','Coparticipação'],'rafael.monteiro@demo.geralindica.com.br',3,true,null),
+    (3,'Camila Rocha','Belo Horizonte, MG',415829,41,97,30,30,5.0,'10.2455.8812-3','Planos com obstetrícia e atendimento para gestantes.',array['Obstetrícia','Famílias'],'camila.rocha@demo.geralindica.com.br',6,true,null),
+    (4,'Thiago Almeida','Curitiba, PR',1222271,29,88,12,30,4.7,'10.3012.4410-9','Comparo operadoras lado a lado e explico cada carência.',array['PF','Seniores'],'thiago.almeida@demo.geralindica.com.br',2,true,null),
+    (5,'Fernanda Lima','Recife, PE',1239291,32,76,22,30,4.8,'10.2766.1205-4','Atendo comércios locais e suas equipes, de 2 a 30 vidas.',array['PME','Comércio'],'fernanda.lima@demo.geralindica.com.br',3,true,null),
+    (6,'Bruno Carvalho','Rio de Janeiro, RJ',2379004,27,64,9,20,4.6,'10.3190.7781-2','Planos regionais com bom custo-benefício na Zona Norte e Baixada.',array['Municipal','Coparticipação'],'bruno.carvalho@demo.geralindica.com.br',1,false,null),
+    (7,'Patrícia Nunes','Salvador, BA',733872,31,59,25,30,4.9,'10.2840.6634-7','Indicadores motoristas são minha maior carteira. Respondo em até 1h.',array['Motoristas','PF'],'patricia.nunes@demo.geralindica.com.br',5,true,null),
+    (8,'Diego Santos','Porto Alegre, RS',1681010,25,41,6,20,4.5,'10.3301.0098-5','Começando forte em Porto Alegre, com muita vaga para indicadores.',array['PF','Adesão'],'diego.santos@demo.geralindica.com.br',1,false,null);
 
   for c in select * from s_cons order by ordem loop
     v_id := private.seed_user(c.email, jsonb_build_object('papel','consultor','nome',c.nome,'cidade',c.cidade,'susep',c.susep,
@@ -62,26 +63,26 @@ begin
   end loop;
 
   -- ===== Admin =====
-  v_id := private.seed_user('admin@demo.indikei.com.br', '{"nome":"Renan Azevedo","contrato_assinado_em":"2026-01-10T12:00:00Z"}');
+  v_id := private.seed_user('admin@demo.geralindica.com.br', '{"nome":"Renan Azevedo","contrato_assinado_em":"2026-01-10T12:00:00Z"}');
   delete from public.indicadores where id = v_id;
   update public.profiles set papel = 'admin' where id = v_id;
 
   -- ===== Indicadores nomeados =====
   create temp table s_ind (nome text, perfil text, tipo text, cons int, canais int, gov boolean, email text) on commit drop;
   insert into s_ind values
-    ('Carlos Eduardo Mendes','Motorista de app','PF',1,3,true,'carlos.mendes@demo.indikei.com.br'),
-    ('Luciana Ferraz','Dona de padaria','PJ',1,1,true,'luciana.ferraz@demo.indikei.com.br'),
-    ('Anderson Silva','Motorista de app','PF',1,1,true,'anderson.silva@demo.indikei.com.br'),
-    ('Gabriel Torres','Criador de conteúdo','PF',1,2,true,'gabriel.torres@demo.indikei.com.br'),
-    ('Débora Lins','Farmácia','PJ',1,1,true,'debora.lins@demo.indikei.com.br'),
-    ('Marcelo Azevedo','Contador','PJ',1,1,true,'marcelo.azevedo@demo.indikei.com.br'),
-    ('Renata Campos','Salão de beleza','PF',1,1,false,'renata.campos@demo.indikei.com.br'),
-    ('Wellington Souza','Motorista de app','PF',1,1,true,'wellington.souza@demo.indikei.com.br'),
-    ('Paula Reis','Influenciadora','PJ',2,4,true,'paula.reis@demo.indikei.com.br'),
-    ('Joana Vieira','Farmácia','PJ',3,2,true,'joana.vieira@demo.indikei.com.br'),
-    ('Fábio Nunes','Motorista de app','PF',4,1,false,'fabio.nunes@demo.indikei.com.br'),
-    ('Rosa Pereira','Salão de beleza','PF',5,2,true,'rosa.pereira@demo.indikei.com.br'),
-    ('Edson Matos','Motorista de app','PF',7,1,true,'edson.matos@demo.indikei.com.br');
+    ('Carlos Eduardo Mendes','Motorista de app','PF',1,3,true,'carlos.mendes@demo.geralindica.com.br'),
+    ('Luciana Ferraz','Dona de padaria','PJ',1,1,true,'luciana.ferraz@demo.geralindica.com.br'),
+    ('Anderson Silva','Motorista de app','PF',1,1,true,'anderson.silva@demo.geralindica.com.br'),
+    ('Gabriel Torres','Criador de conteúdo','PF',1,2,true,'gabriel.torres@demo.geralindica.com.br'),
+    ('Débora Lins','Farmácia','PJ',1,1,true,'debora.lins@demo.geralindica.com.br'),
+    ('Marcelo Azevedo','Contador','PJ',1,1,true,'marcelo.azevedo@demo.geralindica.com.br'),
+    ('Renata Campos','Salão de beleza','PF',1,1,false,'renata.campos@demo.geralindica.com.br'),
+    ('Wellington Souza','Motorista de app','PF',1,1,true,'wellington.souza@demo.geralindica.com.br'),
+    ('Paula Reis','Influenciadora','PJ',2,4,true,'paula.reis@demo.geralindica.com.br'),
+    ('Joana Vieira','Farmácia','PJ',3,2,true,'joana.vieira@demo.geralindica.com.br'),
+    ('Fábio Nunes','Motorista de app','PF',4,1,false,'fabio.nunes@demo.geralindica.com.br'),
+    ('Rosa Pereira','Salão de beleza','PF',5,2,true,'rosa.pereira@demo.geralindica.com.br'),
+    ('Edson Matos','Motorista de app','PF',7,1,true,'edson.matos@demo.geralindica.com.br');
 
   for r in select s_ind.*, s_cons.id as cons_id from s_ind join s_cons on s_cons.ordem = s_ind.cons loop
     v_id := private.seed_user(r.email, jsonb_build_object('papel','indicador','nome',r.nome,'perfil',r.perfil,'tipo_pessoa',r.tipo,
@@ -93,16 +94,16 @@ begin
   end loop;
 
   -- Carlos: dados de recebimento e escaneamentos do protótipo
-  update public.profiles set documento = '412.887.093-12', telefone = '(19) 98871-4471', chave_pix = '412.887.093-12'
-  where email = 'carlos.mendes@demo.indikei.com.br';
+  update public.profiles set documento = '412.887.093-12', telefone = '(19) 98871-4471'
+  where email = 'carlos.mendes@demo.geralindica.com.br';
   update public.canais cn set escaneamentos = (array[312,64,36])[cn.numero]
-  from public.profiles p where p.id = cn.indicador_id and p.email = 'carlos.mendes@demo.indikei.com.br';
+  from public.profiles p where p.id = cn.indicador_id and p.email = 'carlos.mendes@demo.geralindica.com.br';
 
   -- ===== Indicadores de preenchimento (ocupação das carteiras) =====
   for c in select * from s_cons order by ordem loop
     while (select ocupacao from public.consultores where id = c.id) < c.ocup loop
       v_n := v_n + 1;
-      v_id := private.seed_user('indicador' || v_n || '@demo.indikei.com.br', jsonb_build_object('papel','indicador',
+      v_id := private.seed_user('indicador' || v_n || '@demo.geralindica.com.br', jsonb_build_object('papel','indicador',
         'nome', firsts[1 + floor(random() * array_length(firsts,1))::int] || ' ' || lasts[1 + floor(random() * array_length(lasts,1))::int],
         'perfil', perfis[1 + floor(random() * array_length(perfis,1))::int],
         'tipo_pessoa', case when random() < 0.25 then 'PJ' else 'PF' end,
@@ -127,29 +128,20 @@ begin
       select i2.id, (select x.id from public.canais x where x.indicador_id = i2.id order by x.numero limit 1)
         into v_ind, v_canal
       from public.indicadores i2 where i2.consultor_id = c.id order by random() limit 1;
-      insert into public.leads (consultor_id, indicador_id, canal_id, nome, plano, valor_adesao, etapa, created_at, updated_at, triagem_passo)
+      insert into public.leads (consultor_id, indicador_id, canal_id, nome, plano, valor_adesao, etapa, created_at, updated_at)
       values (c.id, v_ind, v_canal,
         firsts[1 + floor(random() * array_length(firsts,1))::int] || ' ' || lasts[1 + floor(random() * array_length(lasts,1))::int],
         planos[1 + floor(random() * array_length(planos,1))::int], 600 + floor(random() * 24) * 100,
-        v_etapa, v_d - interval '6 days', v_d, 7);
+        v_etapa, v_d - interval '6 days', v_d);
     end loop;
   end loop;
 
-  -- reprovados antigos: estorno integral
-  insert into public.transacoes (lead_id, bruto, aliquota, pct_indicador, status, created_at)
-  select l.id, l.valor_adesao, case when p.tipo_pessoa = 'PJ' then 6 else 27.5 end, 50, 'estornado', l.updated_at
-  from public.leads l left join public.profiles p on p.id = l.indicador_id
-  where l.etapa = 'reprovado' and not exists (select 1 from public.transacoes t where t.lead_id = l.id);
-
-  -- aprovados com mais de 20 dias já foram repassados via Pix
-  update public.transacoes set status = 'repassado', liberado_em = created_at + interval '3 days'
-  where status = 'verdinho' and created_at < now() - interval '20 days';
 end $$;
 
 -- ===== Leads de exemplo do protótipo (carteira da Juliana) =====
 do $$
 declare
-  v_jul uuid := (select id from public.profiles where email = 'juliana.prado@demo.indikei.com.br');
+  v_jul uuid := (select id from public.profiles where email = 'juliana.prado@demo.geralindica.com.br');
   r record; v_ind uuid; v_canal uuid; v_lead uuid;
   v_ordem text[] := array['novo','triagem','cotacao','negociacao','contrato','custodia','entrevista','aprovado','reprovado'];
 begin
@@ -181,36 +173,25 @@ begin
     if r.ind_email is not null then
       select p.id, c.id into v_ind, v_canal from public.profiles p
       left join public.canais c on c.indicador_id = p.id and c.numero = r.canal
-      where p.email = r.ind_email || '@demo.indikei.com.br';
+      where p.email = r.ind_email || '@demo.geralindica.com.br';
     end if;
-    insert into public.leads (consultor_id, indicador_id, canal_id, nome, cpf, telefone, plano, valor_adesao, etapa, created_at, updated_at, triagem_passo, triagem)
+    insert into public.leads (consultor_id, indicador_id, canal_id, nome, cpf, telefone, plano, valor_adesao, etapa, created_at, updated_at)
     values (v_jul, v_ind, v_canal, r.nome, r.cpf, r.tel, r.plano, r.valor,
       case when r.etapa = 'reprovado' then 'entrevista' else r.etapa end,
-      now() - r.parado - interval '3 days', now() - r.parado, case when r.etapa = 'novo' then 0 when r.etapa = 'triagem' then 3 else 7 end,
-      case when r.etapa in ('novo','triagem') then '{}'::jsonb else jsonb_build_object(
-        'Tipo', r.tipo, 'Idade', r.idade || ' anos', 'Profissão', r.prof,
-        'Abrangência', case when r.idade % 2 = 1 then 'Estadual' else 'Nacional' end,
-        'Acomodação', case when r.plano like '%Apartamento%' then 'Apartamento' else 'Enfermaria' end,
-        'Obstetrícia', case when r.idade < 40 then 'Sim' else 'Não' end,
-        'Dependentes', case when r.tipo = 'PME' then 'Sim, 3' else 'Não' end) end)
+      now() - r.parado - interval '3 days', now() - r.parado)
     returning id into v_lead;
     if r.etapa = 'reprovado' then
       update public.leads set etapa = 'reprovado' where id = v_lead;
       update public.leads set updated_at = now() - r.parado where id = v_lead;
     end if;
-    update public.transacoes set created_at = now() - r.parado where lead_id = v_lead;
-    if r.pago then
-      update public.transacoes set status = 'repassado', liberado_em = now() - r.parado + interval '3 days' where lead_id = v_lead;
-    end if;
-
     -- histórico resumido da conversa
     delete from public.lead_eventos where lead_id = v_lead;
     insert into public.lead_eventos (lead_id, tipo, texto, created_at) values
-      (v_lead, 'robo', case when v_canal is null then 'Cliente iniciou conversa sem código de canal' else 'Cliente escaneou o QR Code e iniciou conversa no WhatsApp' end, now() - r.parado - interval '3 days');
+      (v_lead, 'cliente', case when v_canal is null then 'Cliente chamou no WhatsApp sem código de indicador' else 'Cliente escaneou o QR Code e chamou no WhatsApp com o código' end, now() - r.parado - interval '3 days');
     if array_position(v_ordem, r.etapa) >= 3 then
       insert into public.lead_eventos (lead_id, tipo, texto, created_at) values
-        (v_lead, 'robo', 'Triagem concluída. Prefere ' || case when r.plano like '%Apartamento%' then 'apartamento' else 'enfermaria' end || ', orçamento até R$ ' || round(r.valor * 1.1)::int || '/mês', now() - r.parado - interval '3 days' + interval '6 minutes'),
-        (v_lead, 'pdf', 'Cotação em PDF enviada com 3 opções', now() - r.parado - interval '3 days' + interval '7 minutes');
+        (v_lead, 'consultor', 'Triagem feita por telefone. Prefere ' || case when r.plano like '%Apartamento%' then 'apartamento' else 'enfermaria' end || ', orçamento até R$ ' || round(r.valor * 1.1)::int || '/mês', now() - r.parado - interval '3 days' + interval '6 minutes'),
+        (v_lead, 'consultor', 'Cotação enviada com 3 opções', now() - r.parado - interval '3 days' + interval '7 minutes');
     end if;
     if array_position(v_ordem, r.etapa) >= 4 then
       insert into public.lead_eventos (lead_id, tipo, texto, created_at) values
@@ -218,31 +199,6 @@ begin
         (v_lead, 'cliente', 'Cliente achou caro e pediu algo mais em conta', now() - r.parado - interval '1 day');
     end if;
   end loop;
-
-  -- saques agrupados por mês (histórico de Pix)
-  with g as (
-    select l.indicador_id, date_trunc('month', t.liberado_em) m,
-      sum(round(t.bruto * (1 - t.aliquota/100) * t.pct_indicador/100, 2)) v, count(*) q
-    from public.transacoes t join public.leads l on l.id = t.lead_id
-    where t.status = 'repassado' and l.indicador_id is not null group by 1, 2)
-  insert into public.saques (indicador_id, valor, qtd, created_at)
-  select indicador_id, v, q, m + interval '27 days' from g;
-  update public.transacoes t set saque_id = s.id
-  from public.leads l, public.saques s
-  where l.id = t.lead_id and t.status = 'repassado' and s.indicador_id = l.indicador_id
-    and date_trunc('month', t.liberado_em) = date_trunc('month', s.created_at - interval '27 days');
-
-  -- fila de recuperação (abandonaram a triagem)
-  insert into public.leads (consultor_id, indicador_id, canal_id, nome, telefone, etapa, triagem_passo, abandonou_em, created_at, updated_at)
-  select v_jul, p.id, c.id, x.nome, x.tel, 'triagem', x.passo, now() - x.ha, now() - x.ha - interval '10 minutes', now() - x.ha
-  from (values
-    ('Aline Barbosa','carlos.mendes',1,4,interval '6 hours','(19) 99120-3381'),
-    ('Ricardo Moreira','luciana.ferraz',1,2,interval '19 hours','(19) 99230-1180'),
-    ('Jéssica Lopes','gabriel.torres',2,6,interval '44 hours 32 minutes','(19) 99341-7702'),
-    ('Mateus Cardoso','anderson.silva',1,1,interval '47 hours 13 minutes','(19) 99452-0093')
-  ) x(nome, ind, canal, passo, ha, tel)
-  join public.profiles p on p.email = x.ind || '@demo.indikei.com.br'
-  join public.canais c on c.indicador_id = p.id and c.numero = x.canal;
 
   -- avaliações públicas
   insert into public.avaliacoes (consultor_id, autor, estrelas, texto, created_at)
@@ -260,8 +216,22 @@ begin
     ('patricia.nunes','Edson, motorista',5,'Responde em minutos mesmo. Já indiquei vários passageiros.','2026-09-28'),
     ('diego.santos','Tiago, autônomo',4,'Atencioso e organizado, ainda começando mas promete.','2026-09-05')
   ) a(email, autor, estrelas, texto, d)
-  join public.profiles p on p.email = a.email || '@demo.indikei.com.br'
+  join public.profiles p on p.email = a.email || '@demo.geralindica.com.br'
   join public.consultores s on s.id = p.id;
 end $$;
+
+-- ===== Vendas registradas pelos consultores =====
+-- Pagamento recebido / entrevista = aguardando entrevista; aprovado = Verdinho; reprovado = devolvido.
+insert into public.vendas (consultor_id, lead_id, indicador_id, canal_id, cliente, valor_adesao, data_venda, status, created_at, updated_at)
+select l.consultor_id, l.id, l.indicador_id, l.canal_id, split_part(l.nome, ' ', 1), l.valor_adesao, l.updated_at::date,
+  case l.etapa when 'aprovado' then 'aprovado' when 'reprovado' then 'reprovado' else 'aguardando_entrevista' end, l.updated_at, l.updated_at
+from public.leads l
+where l.etapa in ('custodia','entrevista','aprovado','reprovado') and l.valor_adesao > 0;
+
+-- Imposto do consultor gravado na venda e bonificação de 100% nas aprovadas (exemplo).
+update public.vendas set aliquota = coalesce(private.aliquota_consultor(consultor_id), 0),
+  bonificacao_pct = case when status = 'aprovado' then 100 end;
+
+select private.recalc_consultor(id) from public.consultores;
 
 drop function private.seed_user(text, jsonb);

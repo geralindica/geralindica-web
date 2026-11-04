@@ -1,13 +1,15 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import * as Accordion from '@radix-ui/react-accordion'
-import { Apple, Bot, Flower2, Headset, Lock, MessageCircle, Minus, Plus, QrCode, ShieldCheck, ShieldPlus, ShieldUser, Smile, Store } from 'lucide-react'
+import { Apple, Flower2, Headset, MessageCircle, Minus, Plus, QrCode, ShieldCheck, ShieldPlus, ShieldUser, Smile, Store, Thermometer } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button'
 import { VerdinhoBadge } from '@/components/ui/badges'
 import { Chip, Eyebrow } from '@/components/ui/form'
 import { CheckCircleFilled } from '@/components/icons'
 import { faqs } from '@/data/conteudo'
-import { brl, comissaoIndicador } from '@/lib/utils'
+import { brl } from '@/lib/utils'
+import { useConfig } from '@/data/queries'
+import { calcularSplit, pct } from '@/lib/negocio'
 
 const h2 = 'm-0 text-[34px] font-extrabold leading-[1.05] tracking-[-0.04em] sm:text-[44px]'
 
@@ -23,7 +25,7 @@ function Hero() {
           Indique planos de saúde. Receba <span className="text-verde-600">no verdinho.</span>
         </h1>
         <p className="m-0 max-w-[520px] text-pretty text-[19px] leading-[1.55] text-ink-600">
-          Espalhe seu QR Code no carro, na loja ou no Instagram. O robô atende pelo WhatsApp, o consultor fecha a venda e você fica com 50% do lucro líquido de cada adesão aprovada.
+          Espalhe seu QR Code no carro, na loja ou no Instagram. O cliente chama o seu consultor no WhatsApp, ele faz todo o atendimento e, com a adesão aprovada, manda a sua parte por Pix.
         </p>
         <div className="grid max-w-[560px] grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3">
           <Link
@@ -40,7 +42,7 @@ function Hero() {
           >
             <Headset size={26} />
             <span className="text-[18px] font-extrabold">Sou consultor</span>
-            <span className="text-[13px] text-ink-600">Receba leads já qualificados</span>
+            <span className="text-[13px] text-ink-600">Receba clientes de indicadores</span>
           </Link>
         </div>
       </div>
@@ -61,7 +63,7 @@ function Hero() {
           <MessageCircle size={22} className="text-verde-300" />
           <div className="flex flex-col">
             <span className="text-[12px] opacity-70">WhatsApp · canal 01</span>
-            <span className="text-[14px] font-bold">Cotação enviada em PDF</span>
+            <span className="text-[14px] font-bold">Cliente chegou com o seu código</span>
           </div>
         </div>
       </div>
@@ -71,7 +73,7 @@ function Hero() {
 
 const passos = [
   { n: '01', icon: <QrCode size={28} />, iconCls: 'bg-ink-950 text-white', title: 'Espalhe seu QR Code', text: 'Capa de encosto do banco, cartão no balcão, banner ou post. Cada canal tem um código próprio, então você sabe de onde veio cada cliente.' },
-  { n: '02', icon: <Bot size={28} />, iconCls: 'bg-azul-solid text-white', title: 'O robô atende no WhatsApp', text: 'O cliente escaneia e cai direto numa conversa. O robô faz a triagem, envia a cotação em PDF e passa o lead para o seu consultor.' },
+  { n: '02', icon: <MessageCircle size={28} />, iconCls: 'bg-azul-solid text-white', title: 'O consultor atende no WhatsApp', text: 'O cliente escaneia e cai direto no WhatsApp do seu consultor, com o seu código na mensagem. O consultor cota, negocia e fecha.' },
 ]
 
 function ComoFunciona() {
@@ -80,7 +82,7 @@ function ComoFunciona() {
       <div className="mx-auto flex max-w-[1200px] flex-col gap-12 px-7 py-[88px]">
         <div className="flex max-w-[640px] flex-col gap-3">
           <Eyebrow>Como funciona</Eyebrow>
-          <h2 className={h2}>Três passos, do QR Code ao dinheiro liberado.</h2>
+          <h2 className={h2}>Três passos, do QR Code ao seu Pix.</h2>
         </div>
         <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-5">
           {passos.map((p) => (
@@ -102,7 +104,7 @@ function ComoFunciona() {
             </div>
             <div className="text-[22px] font-extrabold tracking-[-0.02em]">Comissão no verdinho</div>
             <p className="m-0 text-[15px] leading-[1.55] text-verde-100">
-              Plano fechado e entrevista de saúde aprovada: o status vira Verdinho ✓ e sua comissão é liberada para saque via Pix.
+              Entrevista de saúde aprovada: o consultor registra a venda, o status vira Verdinho ✓ e ele manda a sua parte por Pix.
             </p>
           </div>
         </div>
@@ -116,14 +118,17 @@ const tickets = [800, 1000, 1500]
 function Simulador() {
   const [n, setN] = useState(5)
   const [ticket, setTicket] = useState(1000)
-  const per = comissaoIndicador(ticket)
+  const cfg = useConfig()
+  const per = cfg.data ? calcularSplit(ticket, cfg.data.aliquota_pf, cfg.data.pct_indicador, cfg.data.pct_consultor_restante).indicador : 0
+  const semImposto = !!cfg.data && cfg.data.aliquota_pf == null
 
   return (
     <section className="mx-auto grid max-w-[1200px] grid-cols-[repeat(auto-fit,minmax(min(100%,420px),1fr))] items-center gap-12 px-7 py-[88px]">
       <div className="flex flex-col gap-4">
         <Eyebrow>Simulador de ganhos</Eyebrow>
         <h2 className={h2}>Quanto você pode ganhar por mês?</h2>
-        <p className="m-0 text-[17px] leading-[1.55] text-ink-600">Arraste para simular. O cálculo usa adesão média e imposto PF de 27,5%. Valores ilustrativos.</p>
+        <p className="m-0 text-[17px] leading-[1.55] text-ink-600">
+          Arraste para simular. Valores ilustrativos, com consultor pessoa física.{semImposto && ' O imposto ainda está sendo definido, então a conta ainda não desconta imposto.'}</p>
       </div>
       <div className="flex flex-col gap-7 rounded-[28px] border border-ink-200 bg-white p-6 shadow-md sm:p-8">
         <div className="flex flex-col gap-3">
@@ -148,10 +153,10 @@ function Simulador() {
         <div className="flex flex-col gap-1.5 rounded-[20px] bg-ink-950 p-6 text-white" aria-live="polite">
           <span className="text-[14px] font-semibold text-verde-200">Você ganha aproximadamente</span>
           <span className="text-[44px] font-extrabold leading-[1.05] tracking-[-0.045em] sm:text-[52px]">
-            {brl(per * n)}
+            {cfg.data ? brl(per * n) : '—'}
             <span className="text-[18px] tracking-normal opacity-60"> /mês</span>
           </span>
-          <span className="text-[13px] text-ink-400">{brl(per)} por adesão aprovada</span>
+          <span className="text-[13px] text-ink-400">{cfg.data ? `${brl(per)} por adesão aprovada` : 'Simulação indisponível no momento'}</span>
         </div>
       </div>
     </section>
@@ -159,6 +164,10 @@ function Simulador() {
 }
 
 function Split() {
+  const cfg = useConfig()
+  const c = cfg.data
+  const r = c ? calcularSplit(1000, c.aliquota_pf, c.pct_indicador, c.pct_consultor_restante) : null
+  const v = (x: number | undefined) => (x == null ? '—' : brl(x))
   return (
     <section className="bg-ink-950 text-white">
       <div className="mx-auto grid max-w-[1200px] grid-cols-[repeat(auto-fit,minmax(min(100%,420px),1fr))] items-center gap-14 px-7 py-[88px]">
@@ -166,39 +175,36 @@ function Split() {
           <Eyebrow className="text-verde-300">Transparência do split</Eyebrow>
           <h2 className={h2}>Metade do lucro líquido é sua. Sem letra miúda.</h2>
           <p className="m-0 text-[17px] leading-[1.6] text-ink-300">
-            Do valor bruto da adesão saem os impostos (27,5% para PF ou a alíquota do Simples para PJ). O que sobra é dividido 50/50: metade para você, metade para o consultor e a plataforma. Todo extrato mostra esse recibo.
+            Do valor da adesão sai o imposto do consultor. Do que sobra, {c ? pct(c.pct_indicador) : 'metade'} é seu. Quem paga é o consultor, por Pix, depois da entrevista de saúde aprovada. A Geralindica não segura o seu dinheiro: você acompanha cada venda no painel.
           </p>
         </div>
         <div className="flex flex-col gap-[14px] rounded-[24px] bg-white p-7 text-ink-950">
-          <div className="flex items-center justify-between">
-            <span className="text-[18px] font-extrabold">Recibo do split</span>
-            <span className="font-mono text-[12px] text-ink-600">#IDK-20817</span>
+          <span className="text-[18px] font-extrabold">Exemplo de adesão</span>
+          <div className="flex justify-between text-[15px]">
+            <span className="text-ink-600">Valor da adesão</span>
+            <span className="font-bold">{brl(1000)}</span>
           </div>
           <div className="flex justify-between text-[15px]">
-            <span className="text-ink-600">Valor bruto da adesão</span>
-            <span className="font-bold">R$ 1.000,00</span>
-          </div>
-          <div className="flex justify-between text-[15px]">
-            <span className="text-ink-600">Imposto (27,5% PF)</span>
-            <span className="font-bold text-vermelho-fg">− R$ 275,00</span>
+            <span className="text-ink-600">{!c ? 'Imposto' : c.aliquota_pf == null ? 'Imposto (a definir)' : `Imposto (${pct(c.aliquota_pf)}, consultor PF)`}</span>
+            <span className="font-bold text-vermelho-fg">− {v(r?.imposto)}</span>
           </div>
           <div className="border-t border-dashed border-ink-200" />
           <div className="flex justify-between text-[16px]">
             <span className="font-bold">Valor líquido</span>
-            <span className="font-extrabold">R$ 725,00</span>
+            <span className="font-extrabold">{v(r?.liquido)}</span>
           </div>
           <div className="my-1.5 flex h-3 gap-[3px] overflow-hidden rounded-full">
-            <div className="flex-1 bg-verde-600" />
-            <div className="flex-1 bg-ink-800" />
+            <div className="bg-verde-600" style={{ flex: r?.indicador || 1 }} />
+            <div className="bg-ink-800" style={{ flex: r?.consultorAdesao || 1 }} />
           </div>
           <div className="grid grid-cols-2 gap-[10px]">
             <div className="rounded-[14px] bg-verde-50 p-[14px]">
-              <div className="text-[12px] font-bold text-verde-700">50% Indicador</div>
-              <div className="text-[20px] font-extrabold text-verde-900 sm:text-[24px]">R$ 362,50</div>
+              <div className="text-[12px] font-bold text-verde-700">{c ? pct(c.pct_indicador) : ''} Indicador</div>
+              <div className="text-[20px] font-extrabold text-verde-900 sm:text-[24px]">{v(r?.indicador)}</div>
             </div>
             <div className="rounded-[14px] bg-ink-50 p-[14px]">
-              <div className="text-[12px] font-bold text-ink-600">50% Consultor + plataforma</div>
-              <div className="text-[20px] font-extrabold sm:text-[24px]">R$ 362,50</div>
+              <div className="text-[12px] font-bold text-ink-600">Consultor + Geralindica</div>
+              <div className="text-[20px] font-extrabold sm:text-[24px]">{v(r?.consultorAdesao)}</div>
             </div>
           </div>
         </div>
@@ -208,8 +214,8 @@ function Split() {
 }
 
 const seguranca = [
-  { icon: <Lock size={26} />, iconCls: 'bg-ambar-bg text-ambar-fg', title: 'Custódia até a entrevista', text: 'O pagamento da adesão fica bloqueado até a entrevista de saúde. Aprovado, vira Verdinho. Reprovado, o cliente recebe 100% de volta.' },
-  { icon: <ShieldUser size={26} />, iconCls: 'bg-ink-100 text-ink-950', title: 'LGPD por padrão', text: 'Quem indica vê só o primeiro nome do cliente, a data, o status e a comissão. CPF, telefone e dados de saúde ficam sempre mascarados.' },
+  { icon: <Thermometer size={26} />, iconCls: 'bg-laranja-bg text-laranja-fg', title: 'Temperatura pública', text: 'Cada consultor tem uma temperatura na vitrine. Quem registra as vendas e paga os indicadores em dia fica quente; quem não paga esfria e deixa de receber indicadores.' },
+  { icon: <ShieldUser size={26} />, iconCls: 'bg-ink-100 text-ink-950', title: 'LGPD por padrão', text: 'Quem indica vê só o primeiro nome do cliente, a data, o status e o valor a receber. CPF, telefone e dados de saúde ficam sempre mascarados.' },
   { icon: <ShieldCheck size={26} />, iconCls: 'bg-azul-bg text-azul-fg', title: 'Contrato assinado no Gov.br', text: 'Indicadores e consultores assinam o contrato com a conta Gov.br no cadastro. Validade jurídica, sem papel nem cartório.' },
 ]
 
@@ -218,7 +224,7 @@ function Seguranca() {
     <section className="mx-auto flex max-w-[1200px] flex-col gap-10 px-7 py-[88px]">
       <div className="flex max-w-[640px] flex-col gap-3">
         <Eyebrow>Segurança</Eyebrow>
-        <h2 className={h2}>Dinheiro protegido para todos os lados.</h2>
+        <h2 className={h2}>Confiança para todos os lados.</h2>
       </div>
       <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-5">
         {seguranca.map((s) => (
@@ -246,9 +252,9 @@ function ParaConsultores() {
       <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,380px),1fr))] items-center gap-10 rounded-[28px] border border-ink-200 bg-white p-6 sm:p-10">
         <div className="flex flex-col gap-[14px]">
           <Eyebrow>Para consultores</Eyebrow>
-          <h2 className="m-0 text-[30px] font-extrabold leading-[1.08] tracking-[-0.035em] sm:text-[36px]">Leads qualificados pelo robô, direto no seu CRM.</h2>
+          <h2 className="m-0 text-[30px] font-extrabold leading-[1.08] tracking-[-0.035em] sm:text-[36px]">Clientes de indicadores, direto no seu WhatsApp.</h2>
           <p className="m-0 text-[16px] leading-[1.6] text-ink-600">
-            Monte uma carteira de até 30 indicadores, apareça no ranking público e acompanhe cada lead da triagem ao Verdinho.
+            Monte uma carteira de até 30 indicadores, organize cada cliente no CRM e registre suas vendas para esquentar a sua temperatura na vitrine.
           </p>
           <div className="mt-1.5 flex flex-wrap gap-[10px]">
             <Link to="/cadastro?papel=consultor" className={buttonVariants({ variant: 'dark', size: 'md' })}>

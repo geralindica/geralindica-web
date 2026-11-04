@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/auth/AuthProvider'
-import { ETAPAS_FINAIS } from '@/lib/negocio'
-import type { ConsultorRow, LeadComOrigem, LeadEvento } from '@/lib/types'
+import { ETAPAS_FINAIS, calcularSplit } from '@/lib/negocio'
+import type { ConsultorRow, LeadComOrigem, LeadEvento, Venda } from '@/lib/types'
 
 /** Data no fuso do navegador, no formato AAAA-MM-DD. */
 const diaLocal = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -13,7 +13,7 @@ type LeadBruto = Omit<LeadComOrigem, 'indicador'> & { ind: { perfil: string | nu
 
 function normalizar(l: LeadBruto): LeadComOrigem {
   const { ind, ...resto } = l
-  return { ...resto, valor_adesao: resto.valor_adesao == null ? null : Number(resto.valor_adesao), triagem: (resto.triagem ?? {}) as Record<string, string>, indicador: ind?.p ? { nome: ind.p.nome } : null }
+  return { ...resto, valor_adesao: resto.valor_adesao == null ? null : Number(resto.valor_adesao), indicador: ind?.p ? { nome: ind.p.nome } : null }
 }
 
 export function useMeuConsultor() {
@@ -54,13 +54,20 @@ export function useLead(id: string | undefined) {
     queryKey: ['con', 'lead', id],
     enabled: !!id,
     queryFn: async () => {
-      const [lead, eventos] = await Promise.all([
+      const [lead, eventos, venda] = await Promise.all([
         supabase.from('leads').select(SELECT_LEAD).eq('id', id!).maybeSingle(),
         supabase.from('lead_eventos').select('*').eq('lead_id', id!).order('created_at'),
+        supabase.from('vendas').select('*').eq('lead_id', id!).maybeSingle(),
       ])
       if (lead.error) throw lead.error
       if (eventos.error) throw eventos.error
-      return { lead: lead.data ? normalizar(lead.data as LeadBruto) : null, eventos: (eventos.data ?? []) as LeadEvento[] }
+      if (venda.error) throw venda.error
+      const v = venda.data as Venda | null
+      return {
+        lead: lead.data ? normalizar(lead.data as LeadBruto) : null,
+        eventos: (eventos.data ?? []) as LeadEvento[],
+        venda: v ? { ...v, valor_adesao: Number(v.valor_adesao) } : null,
+      }
     },
   })
 }
@@ -72,18 +79,19 @@ export function useDashboard() {
     queryFn: async () => {
       const me = session!.user.id
       const agora = new Date()
-      const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1).toISOString()
-      const inicioMesAnt = new Date(agora.getFullYear(), agora.getMonth() - 1, 1).toISOString()
-      const mesmoDiaMesAnt = new Date(agora.getFullYear(), agora.getMonth() - 1, agora.getDate(), agora.getHours()).toISOString()
+      const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1)
+      const inicioMesAnt = new Date(agora.getFullYear(), agora.getMonth() - 1, 1)
+      const mesmoDiaMesAnt = new Date(agora.getFullYear(), agora.getMonth() - 1, agora.getDate())
       const desde30 = new Date(Date.now() - 30 * 86400_000).toISOString()
 
-      const [mes, mesAnt, porDia, tx] = await Promise.all([
-        supabase.from('leads').select('id', { count: 'exact', head: true }).eq('consultor_id', me).eq('etapa', 'aprovado').gte('updated_at', inicioMes),
-        supabase.from('leads').select('id', { count: 'exact', head: true }).eq('consultor_id', me).eq('etapa', 'aprovado').gte('updated_at', inicioMesAnt).lt('updated_at', mesmoDiaMesAnt),
+      const [mes, mesAnt, porDia, vd, cfg] = await Promise.all([
+        supabase.from('vendas').select('id', { count: 'exact', head: true }).eq('consultor_id', me).eq('status', 'aprovado').gte('data_venda', diaLocal(inicioMes)),
+        supabase.from('vendas').select('id', { count: 'exact', head: true }).eq('consultor_id', me).eq('status', 'aprovado').gte('data_venda', diaLocal(inicioMesAnt)).lt('data_venda', diaLocal(mesmoDiaMesAnt)),
         supabase.from('leads').select('created_at').eq('consultor_id', me).gte('created_at', desde30).limit(2000),
-        supabase.from('transacoes').select('status, bruto, created_at').in('status', ['custodia', 'verdinho', 'repassado']).gte('created_at', inicioMesAnt).limit(2000),
+        supabase.from('vendas').select('status, valor_adesao, data_venda, aliquota, bonificacao_pct').eq('consultor_id', me).in('status', ['aguardando_entrevista', 'aprovado']).limit(2000),
+        supabase.from('config_split').select('pct_indicador, pct_consultor_restante').eq('id', 1).single(),
       ])
-      for (const r of [mes, mesAnt, porDia, tx]) if (r.error) throw r.error
+      for (const r of [mes, mesAnt, porDia, vd, cfg]) if (r.error) throw r.error
 
       const dias: { dia: string; n: number }[] = []
       for (let i = 29; i >= 0; i--) {
@@ -95,23 +103,29 @@ export function useDashboard() {
         const d = dias.find((x) => x.dia === k)
         if (d) d.n++
       }
-      const txs = (tx.data ?? []) as { status: string; bruto: number; created_at: string }[]
-      const liberadoMes = txs.filter((t) => t.status !== 'custodia' && t.created_at >= inicioMes)
-      const custodia = txs.filter((t) => t.status === 'custodia')
+      const vendas = (vd.data ?? []) as { status: string; valor_adesao: number; data_venda: string; aliquota: number; bonificacao_pct: number | null }[]
+      const aprovadasMes = vendas.filter((v) => v.status === 'aprovado' && v.data_venda >= diaLocal(inicioMes))
+      const aguardando = vendas.filter((v) => v.status === 'aguardando_entrevista')
+      // Pix do mês: o mesmo cálculo de private.split_venda(), com o imposto e a bonificação gravados em cada venda.
+      const c = cfg.data as { pct_indicador: number; pct_consultor_restante: number | null }
+      const pctCon = c.pct_consultor_restante == null ? null : Number(c.pct_consultor_restante)
+      const splits = aprovadasMes.map((v) => calcularSplit(Number(v.valor_adesao), Number(v.aliquota), Number(c.pct_indicador), pctCon, v.bonificacao_pct == null ? 0 : Number(v.bonificacao_pct)))
       return {
+        pixIndicadores: splits.reduce((a, s) => a + s.indicador, 0),
+        pixGeralindica: pctCon == null ? null : splits.reduce((a, s) => a + (s.geralindica ?? 0), 0),
         vendasMes: mes.count ?? 0,
         vendasMesAnt: mesAnt.count ?? 0,
         porDia: dias,
-        liberado: liberadoMes.reduce((a, t) => a + Number(t.bruto), 0),
-        liberadoQtd: liberadoMes.length,
-        custodia: custodia.reduce((a, t) => a + Number(t.bruto), 0),
-        custodiaQtd: custodia.length,
+        aprovado: aprovadasMes.reduce((a, v) => a + Number(v.valor_adesao), 0),
+        aprovadoQtd: aprovadasMes.length,
+        aguardando: aguardando.reduce((a, v) => a + Number(v.valor_adesao), 0),
+        aguardandoQtd: aguardando.length,
       }
     },
   })
 }
 
-export type MeuIndicador = { id: string; nome: string; perfil: string | null; tipo_pessoa: string; canais: string[]; leads: number; aprovados: number; comissao: number; consultor_desde: string | null }
+export type MeuIndicador = { id: string; nome: string; perfil: string | null; tipo_pessoa: string; canais: string[]; leads: number; aprovados: number; a_repassar: number; consultor_desde: string | null }
 
 export function useMeusIndicadores() {
   return useQuery({
@@ -119,11 +133,7 @@ export function useMeusIndicadores() {
     queryFn: async () => {
       const { data, error } = await supabase.rpc('meus_indicadores')
       if (error) throw error
-      return ((data ?? []) as MeuIndicador[]).map((i) => ({ ...i, leads: Number(i.leads), aprovados: Number(i.aprovados), comissao: Number(i.comissao) }))
+      return ((data ?? []) as MeuIndicador[]).map((i) => ({ ...i, leads: Number(i.leads), aprovados: Number(i.aprovados), a_repassar: Number(i.a_repassar) }))
     },
   })
 }
-
-/** Lead que abandonou a triagem e ainda não foi reengajado. */
-export const emRecuperacao = (l: { abandonou_em: string | null; reengajado_em: string | null; etapa: string }) =>
-  !!l.abandonou_em && !l.reengajado_em && (l.etapa === 'novo' || l.etapa === 'triagem')

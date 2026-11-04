@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { linkWhatsApp } from '@/integrations'
 import { Logo } from '@/components/Logo'
 
-/** Destino do QR Code: conta o escaneamento e abre o WhatsApp com o código do canal. */
+/** Destino do QR Code: conta o escaneamento e abre o WhatsApp do consultor do indicador com o código do canal. */
 export function QrRedirect() {
   const { codigo = '' } = useParams()
   const [link, setLink] = useState<string | null>(null)
@@ -41,7 +41,7 @@ export function QrRedirect() {
         <>
           <Loader2 size={36} className="animate-spin" />
           <h1 className="m-0 text-[24px] font-extrabold">Abrindo o WhatsApp…</h1>
-          <p className="m-0 max-w-[360px] text-[15px] text-verde-100">Você vai falar com nosso atendimento e receber sua cotação de plano de saúde.</p>
+          <p className="m-0 max-w-[360px] text-[15px] text-verde-100">Você vai falar com um consultor de planos de saúde e receber sua cotação.</p>
           {link && (
             <a href={link} className="flex items-center gap-2 rounded-[14px] bg-white px-6 py-3.5 text-[15px] font-extrabold text-verde-900">
               <MessageCircle size={20} />

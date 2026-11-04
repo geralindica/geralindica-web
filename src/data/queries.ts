@@ -39,7 +39,18 @@ export function useConfig() {
     queryFn: async () => {
       const { data, error } = await supabase.from('config_split').select('*').eq('id', 1).single()
       if (error) throw error
-      return data as ConfigSplit
+      // numeric chega como texto ("27.50"); vazio continua null (= a definir)
+      const n = (v: unknown) => (v == null ? null : Number(v))
+      const c = data as ConfigSplit
+      return {
+        ...c,
+        aliquota_pf: n(c.aliquota_pf),
+        aliquota_pj: n(c.aliquota_pj),
+        aliquota_pj_2: n(c.aliquota_pj_2),
+        pct_indicador: Number(c.pct_indicador),
+        pct_consultor_restante: n(c.pct_consultor_restante),
+        bonificacao_padrao: n(c.bonificacao_padrao),
+      }
     },
     staleTime: 5 * 60_000,
   })

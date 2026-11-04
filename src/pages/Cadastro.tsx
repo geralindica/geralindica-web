@@ -5,6 +5,7 @@ import { supabase, mensagemErro } from '@/lib/supabase'
 import { painelDe, useAuth } from '@/auth/AuthProvider'
 import { useConsultores } from '@/data/queries'
 import { assinarContratoGovBr } from '@/integrations'
+import { TemperaturaBadge } from '@/components/ui/badges'
 import { cnpjValido, cpfValido, formatarCNPJ, formatarCPF, formatarTelefone } from '@/lib/negocio'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Field } from '@/components/ui/form'
@@ -235,9 +236,11 @@ export function Cadastro() {
               </div>
               <div className="flex items-start gap-[10px] rounded-[14px] bg-ink-50 px-4 py-[14px] text-[13px] leading-[1.5] text-ink-600">
                 <Info size={20} className="shrink-0 text-verde-700" />
-                {pj
-                  ? 'Como PJ, o imposto descontado da comissão segue a alíquota do seu enquadramento no Simples Nacional (ex.: 6%). Você precisará emitir nota fiscal a cada saque.'
-                  : 'Como PF, é descontado 27,5% de imposto sobre o valor da adesão antes do split 50/50. Você não precisa emitir nota.'}
+                {isInd
+                  ? 'O imposto descontado antes da divisão é o do consultor, que recebe do cliente. Ele manda a sua parte por Pix.'
+                  : pj
+                    ? 'Como PJ, o imposto das suas vendas segue a sua faixa (você escolhe em Meus dados). Informe um CNPJ válido.'
+                    : 'Como PF, o imposto das suas vendas é descontado antes da divisão com o indicador e com a Geralindica.'}
               </div>
             </div>
           )}
@@ -265,7 +268,10 @@ export function Cadastro() {
                         >
                           <Avatar nome={c.nome_exibicao} foto={c.foto_url} size={44} />
                           <div className="min-w-0 flex-1">
-                            <div className="font-extrabold">{c.nome_exibicao}</div>
+                            <div className="flex flex-wrap items-center gap-1.5 font-extrabold">
+                              {c.nome_exibicao}
+                              <TemperaturaBadge valor={c.temperatura} small />
+                            </div>
                             <div className="text-[13px] text-ink-600">
                               {c.cidade} · {c.conv}% conversão
                             </div>
@@ -315,14 +321,14 @@ export function Cadastro() {
                 <ul className="m-0 pl-5 text-[14px] leading-[1.7] text-ink-800">
                   {(isInd
                     ? [
-                        'Comissão de 50% do lucro líquido de cada adesão aprovada.',
-                        'Valores em custódia até a entrevista de saúde; estorno integral se reprovado.',
+                        'Comissão de 50% do lucro líquido de cada adesão aprovada, paga pelo consultor via Pix.',
+                        'O consultor segura o pagamento até a entrevista de saúde e devolve 100% ao cliente se reprovado.',
                         'Acesso apenas a dados não sensíveis dos clientes (LGPD).',
                         'Autonomia total: sem subordinação, sem exclusividade.',
                       ]
                     : [
                         'Carteira de até 30 indicadores, com portabilidade livre.',
-                        'Split de 50% do líquido entre consultor e plataforma.',
+                        'Atender o cliente, registrar cada venda na plataforma e fazer os Pix do indicador e da Geralindica.',
                         'Tratamento de dados de saúde conforme LGPD e normas da ANS.',
                         'Acompanhamento por relatórios do CRM, sem monitoramento de conversas.',
                       ]

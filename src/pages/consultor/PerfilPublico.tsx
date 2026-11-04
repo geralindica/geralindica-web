@@ -8,7 +8,7 @@ import { useConsultores } from '@/data/queries'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/form'
-import { HotBadge, TopBadge } from '@/components/ui/badges'
+import { HotBadge, TemperaturaBadge, TopBadge } from '@/components/ui/badges'
 import { Avatar, Card } from '@/components/painel/comum'
 import { Carregando, ErroBox, useToast } from '@/components/ui/feedback'
 import { useMeuConsultor } from './dados'
@@ -157,6 +157,7 @@ export function PerfilPublico() {
               </div>
             </div>
             <div className="flex min-h-[22px] flex-wrap gap-1.5">
+              <TemperaturaBadge valor={c.temperatura} />
               {eu?.hot && <HotBadge />}
               {eu?.top && <TopBadge />}
             </div>

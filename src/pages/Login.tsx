@@ -10,9 +10,9 @@ import { useToast } from '@/components/ui/feedback'
 // Contas de demonstração (só aparecem rodando localmente; ver supabase/seed.sql).
 const DEMO = import.meta.env.DEV
   ? [
-      { label: 'Indicador', email: 'carlos.mendes@demo.indikei.com.br', cor: 'bg-verde-600 hover:bg-verde-700' },
-      { label: 'Consultor', email: 'juliana.prado@demo.indikei.com.br', cor: 'bg-ink-950 hover:bg-ink-800' },
-      { label: 'Admin', email: 'admin@demo.indikei.com.br', cor: 'bg-ink-800 hover:bg-ink-950' },
+      { label: 'Indicador', email: 'carlos.mendes@demo.geralindica.com.br', cor: 'bg-verde-600 hover:bg-verde-700' },
+      { label: 'Consultor', email: 'juliana.prado@demo.geralindica.com.br', cor: 'bg-ink-950 hover:bg-ink-800' },
+      { label: 'Admin', email: 'admin@demo.geralindica.com.br', cor: 'bg-ink-800 hover:bg-ink-950' },
     ]
   : []
 // Senha das contas de demonstração: só no .env.local (VITE_DEMO_SENHA), nunca no código.

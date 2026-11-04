@@ -43,7 +43,7 @@ export function Catalogo() {
     <>
       <div>
         <h1 className="m-0 text-[26px] font-extrabold tracking-[-0.035em] sm:text-[30px]">Catálogo de produtos</h1>
-        <div className="mt-1 text-[14px] text-ink-600">Cada produto tem seu próprio robô de triagem, split e regra de custódia.</div>
+        <div className="mt-1 text-[14px] text-ink-600">Produtos que os indicadores podem divulgar. Por enquanto, só Plano de Saúde está ativo.</div>
       </div>
       {ativos.map((p) => {
         const Icon = ICONES[p.icone] ?? ShieldPlus
