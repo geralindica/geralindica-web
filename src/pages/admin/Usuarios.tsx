@@ -100,7 +100,10 @@ export function Usuarios() {
                           {c.nome_exibicao}
                           {!c.publicado && <span className="ml-1.5 text-[11px] font-bold text-ink-400">(oculto)</span>}
                         </div>
-                        <div className="truncate text-[12px] text-ink-600">{c.cidade}</div>
+                        <div className="flex items-center gap-2 text-[12px] text-ink-600">
+                          <span className="truncate">{c.cidade}</span>
+                          <AprovarConsultor id={c.id} aprovado={c.aprovado} />
+                        </div>
                       </div>
                     </div>
                     <span className="font-mono text-[12px]">{c.susep ?? '—'}</span>
@@ -216,5 +219,40 @@ function ContratoCelula({ id, c }: { id: string; c: Contrato | null }) {
         </>
       )}
     </div>
+  )
+}
+
+/** Consultor novo só entra na vitrine e recebe indicadores depois de aprovado aqui. */
+function AprovarConsultor({ id, aprovado }: { id: string; aprovado: boolean }) {
+  const qc = useQueryClient()
+  const toast = useToast()
+  const m = useMutation({
+    mutationFn: async (valor: boolean) => {
+      const { error } = await supabase.rpc('admin_aprovar_consultor', { p_consultor: id, p_aprovado: valor })
+      if (error) throw error
+      return valor
+    },
+    onSuccess: (valor) => {
+      toast(valor ? 'Consultor aprovado. Ele já aparece na vitrine.' : 'Aprovação retirada. O consultor saiu da vitrine.')
+      qc.invalidateQueries({ queryKey: ['adm'] })
+      qc.invalidateQueries({ queryKey: ['consultores'] })
+    },
+    onError: (e) => toast(mensagemErro(e), 'erro'),
+  })
+  if (aprovado)
+    return (
+      <button type="button" disabled={m.isPending} onClick={() => m.mutate(false)} className="shrink-0 cursor-pointer font-bold text-ink-400 hover:text-vermelho-fg">
+        Suspender
+      </button>
+    )
+  return (
+    <button
+      type="button"
+      disabled={m.isPending}
+      onClick={() => m.mutate(true)}
+      className="shrink-0 cursor-pointer rounded-full bg-ambar-bg px-2 py-0.5 font-bold text-ambar-fg hover:bg-verde-bg hover:text-verde-fg"
+    >
+      Aguardando · Aprovar
+    </button>
   )
 }

@@ -5,7 +5,7 @@ import { MARCA } from '@/lib/marca'
 export type TipoArte = 'encosto' | 'cartao' | 'story'
 
 const VERDE = '#0F9D58'
-const INK = '#0B1A30'
+const INK = '#0B2A66'
 
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath()
@@ -34,31 +34,29 @@ function textoQuebrado(ctx: CanvasRenderingContext2D, texto: string, x: number, 
   return yy + altura
 }
 
-// Símbolo da marca (public/marca.svg, o mesmo do site e do favicon) + nome.
-let simbolo: Promise<HTMLImageElement> | undefined
-function carregarSimbolo() {
-  simbolo ??= new Promise((res, rej) => {
+// Logo oficial (public/logo.png, o mesmo do site) numa etiqueta branca, porque o fundo das artes é verde.
+let logoImg: Promise<HTMLImageElement> | undefined
+function carregarLogo() {
+  logoImg ??= new Promise((res, rej) => {
     const img = new Image()
     img.onload = () => res(img)
     img.onerror = () => rej(new Error('Não foi possível carregar a logo'))
-    img.src = MARCA.simbolo
+    img.src = MARCA.logo
   })
-  return simbolo
+  return logoImg
 }
 
-async function logo(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, cor: string, alinhar: 'center' | 'left' = 'center') {
-  const img = await carregarSimbolo()
-  ctx.font = `800 ${size}px Manrope, system-ui, sans-serif`
-  const w = ctx.measureText(MARCA.nome).width
-  const b = size * 1.15
-  const gap = size * 0.35
-  const x0 = alinhar === 'center' ? x - (b + gap + w) / 2 : x
-  const topo = y - size * 0.36 - b / 2
-
-  ctx.drawImage(img, x0, topo, b, b)
-  ctx.fillStyle = cor
-  ctx.textAlign = 'left'
-  ctx.fillText(MARCA.nome, x0 + b + gap, y)
+async function logo(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, alinhar: 'center' | 'left' = 'center') {
+  const img = await carregarLogo()
+  const h = size * 1.1
+  const w = (img.width / img.height) * h
+  const pad = size * 0.45
+  const x0 = alinhar === 'center' ? x - w / 2 : x + pad
+  const topo = y - h
+  ctx.fillStyle = '#fff'
+  roundRect(ctx, x0 - pad, topo - pad * 0.7, w + pad * 2, h + pad * 1.4, (h + pad * 1.4) / 2)
+  ctx.fill()
+  ctx.drawImage(img, x0, topo, w, h)
 }
 
 async function qrCanvas(link: string, px: number) {
@@ -88,7 +86,7 @@ export async function gerarArte(tipo: TipoArte, link: string, rotulo: string, co
     ctx.globalAlpha = 0.92
     textoQuebrado(ctx, 'Aponte a câmera e receba sua cotação no WhatsApp.', 70, y + 20, 500, 40, 'left')
     ctx.globalAlpha = 1
-    await logo(ctx, 70, H - 70, 52, '#fff', 'left')
+    await logo(ctx, 70, H - 70, 44, 'left')
     const q = 380
     ctx.fillStyle = '#fff'
     roundRect(ctx, W - q - 110, (H - q) / 2 - 40, q + 40, q + 40, 28)
@@ -116,7 +114,7 @@ export async function gerarArte(tipo: TipoArte, link: string, rotulo: string, co
     ctx.font = '600 30px "JetBrains Mono", monospace'
     ctx.textAlign = 'center'
     ctx.fillText(`${rotulo} · ${codigo}`, W / 2, H - (story ? 240 : 150))
-    await logo(ctx, W / 2, H - (story ? 140 : 70), story ? 72 : 60, '#fff')
+    await logo(ctx, W / 2, H - (story ? 140 : 70), story ? 60 : 50)
   }
 
   return new Promise((res, rej) => cv.toBlob((b) => (b ? res(b) : rej(new Error('Falha ao gerar a imagem'))), 'image/png'))

@@ -11,12 +11,10 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import cm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 
-VERSAO = '1 — 07/11/2026'
-# Dados da empresa: preencher quando o CNPJ existir.
+VERSAO = '1.1 — 07/11/2026'
 CONTRATANTE = (
-    '<b>GERALINDICA</b>, plataforma de agenciamento de leads e marketing disponível em geralindica.com.br, '
-    'razão social e CNPJ: ______________________________, '
-    'doravante <b>CONTRATANTE</b>'
+    '<b>GERALINDICA</b>, inscrita no CNPJ sob o nº 68.110.529/0001-00, plataforma de agenciamento de leads e marketing '
+    'disponível em geralindica.com.br, doravante <b>CONTRATANTE</b>'
 )
 SAIDA = Path(__file__).resolve().parents[2] / 'public' / 'contratos'
 

@@ -56,7 +56,7 @@ begin
     v_id := private.seed_user(c.email, jsonb_build_object('papel','consultor','nome',c.nome,'cidade',c.cidade,'susep',c.susep,
       'max_indicadores',c.maxi,'bio',c.bio,'tipo_pessoa','PJ','administradora','Qualivida Administradora',
       'contrato_assinado_em', case when c.gov then '2026-03-01T12:00:00Z' end));
-    update public.consultores set especialidades = c.tags, nota = c.nota,
+    update public.consultores set especialidades = c.tags, nota = c.nota, aprovado = true,
       foto_url = 'https://images.pexels.com/photos/' || c.ph || '/pexels-photo-' || c.ph || '.jpeg?auto=compress&cs=tinysrgb&w=300&h=300&fit=crop'
     where id = v_id;
     update s_cons set id = v_id where ordem = c.ordem;

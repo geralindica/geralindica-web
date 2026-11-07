@@ -39,6 +39,7 @@ for (const f of readdirSync(migDir).filter((f) => f.endsWith('.sql')).sort()) {
 }
 
 const u = {}
+const um0 = async (sql, params = []) => (await db.query(sql, params)).rows[0]
 async function criar(nome, meta) {
   const r = await db.query(`insert into auth.users (email, raw_user_meta_data) values ($1, $2) returning id`, [`${nome}@t.st`, meta])
   u[nome] = r.rows[0].id
@@ -47,6 +48,10 @@ await criar('admin', {})
 await db.query(`update public.profiles set papel = 'admin' where id = $1`, [u.admin])
 await criar('c1', { papel: 'consultor', nome: 'Cons 1' })
 await criar('c2', { papel: 'consultor', nome: 'Cons 2' })
+await criar('c3', { papel: 'consultor', nome: 'Cons 3 (não aprovado)' })
+// Consultor novo nasce sem aprovação: sem ela não entra na vitrine nem recebe indicadores.
+const aprovado0 = (await um0(`select aprovado from public.consultores where id = $1`, [u.c1])).aprovado
+await db.query(`update public.consultores set aprovado = true where id in ($1, $2)`, [u.c1, u.c2])
 await criar('i1', { nome: 'Ind 1', consultor_id: u.c1 })
 await criar('i2', { nome: 'Ind 2', consultor_id: u.c2 })
 await criar('ipj', { nome: 'Ind PJ', consultor_id: u.c1, tipo_pessoa: 'PJ', documento: '123' })
@@ -216,6 +221,20 @@ espera('aprovado fica assinado', sim((await cgov()).contrato_assinado_em), true)
 espera('depois de conferido não troca o arquivo', await como('igov', `select public.enviar_contrato($1)`, [`${u.igov}/outro.pdf`]), false, 'já foi conferido')
 const ag = await como('admin', `select contrato_enviado_em, contrato_arquivo from public.admin_indicadores() where id = $1`, [u.igov])
 espera('lista do admin mostra o arquivo enviado', sim(ag.ok && ag.rows[0]?.contrato_arquivo), true)
+
+// --- Aprovação do consultor pelo admin ---
+espera('consultor novo nasce sem aprovação', sim(aprovado0 === false), true)
+await criar('ic3', { nome: 'Ind do C3', consultor_id: u.c3 })
+espera('cadastro com consultor não aprovado entra sem consultor', sim((await um(`select consultor_id from public.indicadores where id = $1`, [u.ic3])).consultor_id === null), true)
+espera('indicador não entra na carteira de consultor não aprovado', await como('ic3', `update public.indicadores set consultor_id = $1 where id = auth.uid()`, [u.c3]), false, 'ainda não foi aprovado')
+const vit = await como('i1', `select count(*)::int n from public.consultores where id = $1`, [u.c3])
+espera('consultor não aprovado não aparece na vitrine', sim(vit.ok && vit.rows[0].n === 0), true)
+espera('consultor não se aprova sozinho', await como('c3', `update public.consultores set aprovado = true where id = auth.uid()`), false)
+espera('consultor não usa a função do admin', await como('c3', `select public.admin_aprovar_consultor(auth.uid(), true)`), false, 'Apenas admin')
+espera('admin aprova o consultor', await como('admin', `select public.admin_aprovar_consultor($1, true)`, [u.c3]), true)
+const vit2 = await como('i1', `select count(*)::int n from public.consultores where id = $1`, [u.c3])
+espera('aprovado aparece na vitrine', sim(vit2.ok && vit2.rows[0].n === 1), true)
+espera('indicador entra na carteira depois da aprovação', await como('ic3', `update public.indicadores set consultor_id = $1 where id = auth.uid()`, [u.c3]), true)
 
 console.log(falhas ? `\n${falhas} teste(s) falharam` : '\nTodos os testes passaram')
 process.exit(falhas ? 1 : 0)

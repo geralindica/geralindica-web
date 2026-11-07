@@ -3,8 +3,8 @@
   /* Marca — Verdinho */
   --verde-50:#ECF8F1; --verde-100:#D3F0E0; --verde-200:#A6E1C2; --verde-500:#1DB56B;
   --verde-600:#0F9D58; --verde-700:#0A7F47; --verde-900:#053D23;
-  /* Ink — neutro azul-marinho (a logo será verde + azul) */
-  --ink-950:#0B1A30; --ink-800:#1F2E45; --ink-600:#4A5B70; --ink-400:#8494A8;
+  /* Ink — azul da marca (#0B2A66, kit de marca) e neutros */
+  --ink-950:#0B2A66; --ink-800:#1C3A75; --ink-600:#4A5B70; --ink-400:#8494A8;
   --ink-200:#D8E0EA; --ink-100:#EAEFF5; --ink-50:#F4F7FA; --white:#FFFFFF;
   /* Status */
   --ambar-fg:#9A5B00; --ambar-bg:#FFF3D6; --ambar-solid:#F2A516;
@@ -20,7 +20,7 @@
   --border:var(--ink-200); --input:var(--ink-200); --ring:var(--verde-500);
   --destructive:var(--vermelho-solid);
   /* Tipografia */
-  --font-sans:'Manrope', system-ui, sans-serif; --font-mono:'JetBrains Mono', ui-monospace, monospace;
+  --font-sans:'Manrope', system-ui, sans-serif; --font-display:'Bricolage Grotesque', 'Manrope', system-ui, sans-serif; --font-mono:'JetBrains Mono', ui-monospace, monospace;
   --text-xs:12px; --text-sm:14px; --text-base:16px; --text-lg:18px; --text-xl:22px;
   --text-2xl:28px; --text-3xl:36px; --text-4xl:48px; --text-5xl:64px;
   /* Espaçamento (base 4) */
