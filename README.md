@@ -45,7 +45,7 @@ src/
   auth/            sessão, perfil e proteção de rotas por papel
   components/      UI compartilhada (botões, badges, modal, toasts, layout dos painéis)
   data/queries.ts  consultas públicas (vitrine, avaliações, config, catálogo)
-  integrations/    pontos de encaixe das integrações externas (simuladas hoje)
+  integrations/    pontos de encaixe das integrações externas (hoje só o link do WhatsApp)
   lib/negocio.ts   regras puras: split, máscaras LGPD, etapas, ranking, vagas
   pages/           site público + indicador/ consultor/ admin/
 supabase/
@@ -65,7 +65,7 @@ supabase/
 
 ## Integrações
 
-Veja `src/integrations/README.md`. O QR Code → WhatsApp é real; o Gov.br é simulado. Não há robô, Cotaí nem pagamento.
+Veja `src/integrations/README.md`. O QR Code → WhatsApp é real. O contrato Gov.br é manual: a pessoa assina o PDF em assinador.iti.br e envia pelo painel; o admin confere em Usuários. Não há robô, Cotaí nem pagamento.
 
 ## Publicar (Vercel)
 

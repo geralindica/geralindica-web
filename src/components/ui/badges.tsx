@@ -66,15 +66,15 @@ export function TopBadge({ small }: { small?: boolean }) {
   return <Pill className={cn('bg-ink-950 text-white', small && 'px-[9px] py-0.5 text-[11px]')}>Top 10</Pill>
 }
 
-export function GovBadge({ assinado }: { assinado: boolean }) {
+export function GovBadge({ assinado, enviado = false }: { assinado: boolean; enviado?: boolean }) {
   return (
     <span
       className={cn(
         'inline-flex items-center gap-1 justify-self-start whitespace-nowrap rounded-full px-[10px] py-[3px] text-[12px] font-bold',
-        assinado ? 'bg-azul-bg text-azul-fg' : 'bg-ambar-bg text-ambar-fg',
+        assinado ? 'bg-azul-bg text-azul-fg' : enviado ? 'bg-verde-bg text-verde-fg' : 'bg-ambar-bg text-ambar-fg',
       )}
     >
-      {assinado ? '✓ Assinado' : '⏳ Pendente'}
+      {assinado ? '✓ Assinado' : enviado ? '📄 Conferir' : '⏳ Pendente'}
     </span>
   )
 }
