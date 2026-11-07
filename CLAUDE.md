@@ -20,7 +20,7 @@ Plataforma de indicações de planos de saúde ("Hotmart das indicações"). Só
 
 ## Convenções
 - Texto da interface em português do Brasil; valores com `brl()`; datas `dd/mm/aaaa`.
-- Integrações externas só por `src/integrations/` (hoje: link do WhatsApp real e Gov.br simulado). O QR abre o WhatsApp do consultor do indicador (`registrar_escaneamento()`), com o número geral de reserva. Segredos de terceiros nunca no front: usar Edge Functions.
+- Integrações externas só por `src/integrations/` (hoje: link do WhatsApp). Contrato Gov.br é manual: PDF em `public/contratos` (gerado por `scripts/contratos/gerar.py`), assinado em assinador.iti.br, enviado pelo painel (`enviar_contrato`) e conferido pelo admin (`admin_conferir_contrato`); só o admin preenche `contrato_assinado_em`. O QR abre o WhatsApp do consultor do indicador (`registrar_escaneamento()`), com o número geral de reserva. Segredos de terceiros nunca no front: usar Edge Functions.
 - Logo: ainda não existe. A única fonte é `public/marca.svg` (espaço reservado), lida por `src/components/Logo.tsx`, pelo favicon e pelas artes dos QR Codes (`src/pages/indicador/artes.ts`); nome da marca em `src/lib/marca.ts`. Quando a logo chegar, trocar só o `marca.svg`. Paleta: verde (dinheiro/ação principal) + neutros azul-marinho (`ink`), para combinar com a logo verde e azul.
 - Cores e espaçamentos dos tokens (`tailwind.config.js` / `src/tokens.css`); status da venda via `StatusBadge`, temperatura via `TemperaturaBadge`.
 - `window.scrollTo` devolve Promise em navegadores novos: nunca usar como retorno de `useEffect`.

@@ -8,7 +8,7 @@ const TERMOS = [
   ['Entrevista de saúde e devolução', 'O consultor mantém o pagamento da adesão até a entrevista de saúde. Se aprovado (Verdinho), registra a venda e faz os repasses. Se reprovado, devolve 100% do valor ao cliente e não há comissão.'],
   ['Temperatura', 'Cada consultor tem uma temperatura pública, calculada a partir das vendas registradas, das avaliações dos indicadores e das vendas recentes. Ela serve para os indicadores escolherem com quem trabalhar.'],
   ['Portabilidade', 'O indicador pode trocar de consultor a qualquer momento, desde que o novo consultor tenha vaga na carteira (limite de até 30 indicadores). Leads em andamento permanecem com o consultor anterior.'],
-  ['Assinatura', 'Os contratos de indicadores e consultores são assinados eletronicamente com a conta Gov.br.'],
+  ['Assinatura', 'Depois do cadastro, indicadores e consultores baixam o contrato no painel, assinam eletronicamente com a conta Gov.br (assinador.iti.br) e enviam o PDF assinado. O contrato vale depois que a Geralindica confere o documento.'],
 ]
 
 const PRIVACIDADE = [
@@ -24,7 +24,7 @@ export function Legal({ tipo }: { tipo: 'termos' | 'privacidade' }) {
     <main className="mx-auto flex w-full max-w-[760px] flex-col gap-6 px-4 pb-24 pt-12 sm:px-7">
       <h1 className="m-0 text-[34px] font-extrabold tracking-[-0.04em]">{tipo === 'termos' ? 'Termos de uso' : 'Política de privacidade'}</h1>
       <p className="m-0 rounded-[14px] bg-ambar-bg px-4 py-3 text-[13px] font-semibold text-ambar-fg">
-        Rascunho para validação jurídica (enquadramento como agenciamento de leads, SUSEP/ANS e LGPD). Não publicar sem revisão de um advogado.
+        Versão inicial (07/11/2026), em revisão jurídica. Pode mudar; avisaremos na plataforma.
       </p>
       {itens.map(([t, x]) => (
         <section key={t} className="flex flex-col gap-2">

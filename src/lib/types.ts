@@ -24,7 +24,11 @@ export type Profile = {
   documento: string | null
   telefone: string | null
   email: string | null
+  /** Preenchido só pelo admin, depois de conferir o PDF assinado no Gov.br. */
   contrato_assinado_em: string | null
+  /** PDF assinado enviado pela pessoa (bucket "contratos"), aguardando conferência. */
+  contrato_arquivo: string | null
+  contrato_enviado_em: string | null
   created_at: string
 }
 

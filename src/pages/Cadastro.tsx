@@ -4,7 +4,6 @@ import { ArrowRight, Check, FileText, Headset, Info, MailCheck, QrCode, ShieldCh
 import { supabase, mensagemErro } from '@/lib/supabase'
 import { painelDe, useAuth } from '@/auth/AuthProvider'
 import { useConsultores } from '@/data/queries'
-import { assinarContratoGovBr } from '@/integrations'
 import { TemperaturaBadge } from '@/components/ui/badges'
 import { cnpjValido, cpfValido, formatarCNPJ, formatarCPF, formatarTelefone } from '@/lib/negocio'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -54,7 +53,7 @@ export function Cadastro() {
   const [pickId, setPickId] = useState(preId)
   const [aceite, setAceite] = useState(false)
   const [erro, setErro] = useState('')
-  const [resultado, setResultado] = useState<{ assinadoEm: string; precisaConfirmar: boolean } | null>(null)
+  const [resultado, setResultado] = useState<{ precisaConfirmar: boolean } | null>(null)
 
   // Reinicia o fluxo quando o link muda (ex.: "Sou consultor" clicado de dentro do cadastro).
   const key = params.toString()
@@ -68,7 +67,7 @@ export function Cadastro() {
   }
 
   const isInd = role === 'ind'
-  const stepNames = ['Papel', 'Dados', isInd ? 'Consultor' : 'Atuação', 'Gov.br']
+  const stepNames = ['Papel', 'Dados', isInd ? 'Consultor' : 'Atuação', 'Contrato']
   const comVaga = useMemo(() => (consultores.data ?? []).filter((c) => !c.full), [consultores.data])
   const lista = useMemo(() => {
     const base = comVaga.slice(0, 5)
@@ -108,13 +107,12 @@ export function Cadastro() {
   }
   const back = () => (setErro(''), setStep(Math.max(1, step - 1)))
 
-  // Etapa 5: Gov.br (simulado) e criação da conta
+  // Etapa 5: criação da conta. O contrato é assinado depois, pelo painel (PDF assinado no Gov.br e conferido pelo admin).
   useEffect(() => {
     if (step !== 5) return
     let ativo = true
     ;(async () => {
       try {
-        const { assinadoEm } = await assinarContratoGovBr()
         const { data, error } = await supabase.auth.signUp({
           email: d.email.trim(),
           password: d.senha,
@@ -126,7 +124,6 @@ export function Cadastro() {
               tipo_pessoa: pj ? 'PJ' : 'PF',
               documento: d.doc,
               telefone: d.tel,
-              contrato_assinado_em: assinadoEm,
               ...(isInd
                 ? { consultor_id: pickId, perfil: d.perfil, razao_social: pj ? d.razao.trim() : undefined }
                 : { cidade: d.cidade.trim(), susep: d.susep.trim(), administradora: d.administradora.trim(), max_indicadores: Number(d.limite) || 30 }),
@@ -137,7 +134,7 @@ export function Cadastro() {
         if (error) throw error
         // Supabase devolve usuário sem identidades quando o e-mail já existe
         if (data.user && data.user.identities && data.user.identities.length === 0) throw new Error('User already registered')
-        setResultado({ assinadoEm, precisaConfirmar: !data.session })
+        setResultado({ precisaConfirmar: !data.session })
         setStep(6)
       } catch (e) {
         if (!ativo) return
@@ -309,7 +306,10 @@ export function Cadastro() {
 
           {step === 4 && (
             <div className="flex flex-col gap-[18px]">
-              <h1 className={h1}>Assine o contrato pelo Gov.br</h1>
+              <h1 className={h1}>Seu contrato</h1>
+              <p className="m-0 text-[15px] leading-[1.55] text-ink-600">
+                Depois de criar a conta, você baixa o contrato no seu painel, assina de graça com a sua conta Gov.br (nível prata ou ouro) e envia o PDF assinado por lá mesmo.
+              </p>
               <div className="flex flex-col gap-3 rounded-[18px] border border-ink-200 bg-ink-50 p-5">
                 <div className="flex items-center gap-3">
                   <FileText size={28} className="shrink-0 text-ink-600" />
@@ -355,8 +355,8 @@ export function Cadastro() {
           {step === 5 && (
             <div className="flex flex-col items-center gap-5 py-10 text-center" role="status">
               <div className="size-16 animate-spin rounded-full border-[5px] border-azul-bg border-t-azul-fg [animation-duration:1s]" />
-              <h1 className="m-0 text-[26px] font-extrabold tracking-[-0.03em]">Assinando pelo Gov.br…</h1>
-              <p className="m-0 max-w-[420px] text-[15px] text-ink-600">Você entra com sua conta Gov.br (nível prata ou ouro) e assina o contrato. Em seguida criamos sua conta na Geralindica.</p>
+              <h1 className="m-0 text-[26px] font-extrabold tracking-[-0.03em]">Criando sua conta…</h1>
+              <p className="m-0 max-w-[420px] text-[15px] text-ink-600">Só um instante.</p>
             </div>
           )}
 
@@ -365,7 +365,7 @@ export function Cadastro() {
               <span className="flex size-20 items-center justify-center rounded-full bg-verde-600 text-white shadow-[0_12px_32px_rgba(15,157,88,.35)]">
                 <Check size={44} strokeWidth={3} />
               </span>
-              <h1 className="m-0 text-[32px] font-extrabold tracking-[-0.035em]">Contrato assinado!</h1>
+              <h1 className="m-0 text-[32px] font-extrabold tracking-[-0.035em]">Conta criada!</h1>
               <p className="m-0 max-w-[440px] text-[16px] leading-[1.55] text-ink-600">
                 {isInd
                   ? 'Seu primeiro QR Code já está pronto. Imprima a capa de encosto ou compartilhe o link e comece a indicar hoje.'
@@ -373,8 +373,7 @@ export function Cadastro() {
               </p>
               <div className="flex items-center gap-[10px] rounded-[12px] bg-azul-bg px-4 py-[10px] text-[13px] font-bold text-azul-fg">
                 <ShieldCheck size={18} />
-                Assinado via Gov.br em {new Date(resultado.assinadoEm).toLocaleDateString('pt-BR')} às{' '}
-                {new Date(resultado.assinadoEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                Próximo passo: assinar o contrato pelo Gov.br, no seu painel
               </div>
               {resultado.precisaConfirmar ? (
                 <div className="flex max-w-[460px] items-start gap-2.5 rounded-[14px] bg-ambar-bg px-4 py-3.5 text-left text-[14px] font-semibold leading-[1.5] text-ambar-fg">
@@ -406,8 +405,8 @@ export function Cadastro() {
               <Button variant="outline" size="form" onClick={back} disabled={step === 1} className="disabled:opacity-50">
                 Voltar
               </Button>
-              <Button type="submit" variant={step === 4 ? 'gov' : 'primary'} size="form" className="px-6 font-extrabold">
-                {step === 4 ? 'Assinar com Gov.br' : 'Continuar'}
+              <Button type="submit" variant="primary" size="form" className="px-6 font-extrabold">
+                {step === 4 ? 'Criar minha conta' : 'Continuar'}
                 <ArrowRight size={20} />
               </Button>
             </div>

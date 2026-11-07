@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { LogOut, type LucideIcon } from 'lucide-react'
 import { Logo } from '@/components/Logo'
 import { Avatar } from '@/components/painel/comum'
+import { ContratoPendente } from '@/components/painel/Contrato'
 import { Carregando } from '@/components/ui/feedback'
 import { useAuth } from '@/auth/AuthProvider'
 import { cn } from '@/lib/utils'
@@ -112,6 +113,7 @@ export function PainelLayout({ nav, subtitulo, papelLabel, foto, escuro, barraIn
 
         <main className={cn('flex-1 px-[18px] py-5 sm:px-6 lg:px-10 lg:py-8', barraInferior && 'pb-28 lg:pb-8')}>
           <div className="mx-auto flex w-full flex-col gap-5" style={{ maxWidth: largura }}>
+            <ContratoPendente />
             <Suspense fallback={<Carregando />}>
               <Outlet />
             </Suspense>
