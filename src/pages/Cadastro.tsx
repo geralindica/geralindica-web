@@ -49,7 +49,7 @@ export function Cadastro() {
   const [step, setStep] = useState(1)
   const [role, setRole] = useState<Role>(initialRole)
   const [pj, setPj] = useState(false)
-  const [d, setD] = useState({ nome: '', razao: '', doc: '', tel: '', email: '', senha: '', perfil: PERFIS[0], susep: '', cidade: '', administradora: '', limite: '30' })
+  const [d, setD] = useState({ nome: '', razao: '', doc: '', rg: '', endereco: '', tel: '', email: '', senha: '', perfil: PERFIS[0], susep: '', cidade: '', administradora: '', limite: '30' })
   const [pickId, setPickId] = useState(preId)
   const [aceite, setAceite] = useState(false)
   const [erro, setErro] = useState('')
@@ -87,6 +87,8 @@ export function Cadastro() {
       if (pj && d.razao.trim().length < 3) return 'Informe a razão social.'
       if (d.nome.trim().split(/\s+/).length < 2) return pj ? 'Informe o nome completo do responsável.' : 'Informe seu nome completo.'
       if (pj ? !cnpjValido(d.doc) : !cpfValido(d.doc)) return pj ? 'CNPJ inválido.' : 'CPF inválido.'
+      if (!pj && d.rg.trim().length < 5) return 'Informe seu RG (vai no contrato).'
+      if (d.endereco.trim().length < 10) return 'Informe o endereço completo (vai no contrato).'
       if (d.tel.replace(/\D/g, '').length < 10) return 'Informe um celular com DDD.'
       if (!/^\S+@\S+\.\S+$/.test(d.email.trim())) return 'E-mail inválido.'
       if (d.senha.length < 8) return 'A senha precisa ter pelo menos 8 caracteres.'
@@ -124,6 +126,8 @@ export function Cadastro() {
               tipo_pessoa: pj ? 'PJ' : 'PF',
               documento: d.doc,
               telefone: d.tel,
+              rg: d.rg.trim(),
+              endereco: d.endereco.trim(),
               ...(isInd
                 ? { consultor_id: pickId, perfil: d.perfil, razao_social: pj ? d.razao.trim() : undefined }
                 : { cidade: d.cidade.trim(), susep: d.susep.trim(), administradora: d.administradora.trim(), max_indicadores: Number(d.limite) || 30 }),
@@ -227,6 +231,8 @@ export function Cadastro() {
                   onChange={(e) => setD({ ...d, doc: pj ? formatarCNPJ(e.target.value) : formatarCPF(e.target.value) })}
                   placeholder={pj ? '00.000.000/0000-00' : '000.000.000-00'}
                 />
+                <Field label={pj ? 'RG do responsável (opcional)' : 'RG'} value={d.rg} maxLength={30} onChange={set('rg')} placeholder="00.000.000-0" />
+                <Field label="Endereço completo" value={d.endereco} maxLength={300} autoComplete="street-address" onChange={set('endereco')} placeholder="Rua, número, bairro, cidade/UF, CEP" />
                 <Field label="Celular (WhatsApp)" value={d.tel} type="tel" inputMode="tel" autoComplete="tel" onChange={(e) => setD({ ...d, tel: formatarTelefone(e.target.value) })} placeholder="(19) 98871-4471" />
                 <Field label="E-mail" value={d.email} type="email" autoComplete="email" onChange={set('email')} placeholder="voce@email.com" />
                 <Field label="Crie uma senha" value={d.senha} type="password" autoComplete="new-password" onChange={set('senha')} placeholder="Mínimo de 8 caracteres" />
@@ -308,29 +314,29 @@ export function Cadastro() {
             <div className="flex flex-col gap-[18px]">
               <h1 className={h1}>Seu contrato</h1>
               <p className="m-0 text-[15px] leading-[1.55] text-ink-600">
-                Depois de criar a conta, você baixa o contrato no seu painel, assina de graça com a sua conta Gov.br (nível prata ou ouro) e envia o PDF assinado por lá mesmo.
+                Depois de criar a conta, você baixa no painel o contrato já preenchido com os seus dados, assina de graça com a conta Gov.br (prata ou ouro) e envia o PDF assinado por lá mesmo.
               </p>
               <div className="flex flex-col gap-3 rounded-[18px] border border-ink-200 bg-ink-50 p-5">
                 <div className="flex items-center gap-3">
                   <FileText size={28} className="shrink-0 text-ink-600" />
                   <div className="flex-1">
-                    <div className="font-extrabold">{isInd ? 'Contrato de Indicação Comercial' : 'Contrato de Parceria de Corretagem'}</div>
-                    <div className="text-[13px] text-ink-600">Prestação de serviços de agenciamento de leads e marketing · sem vínculo CLT</div>
+                    <div className="font-extrabold">{isInd ? 'Parceria comercial de indicação de leads' : 'Parceria comercial e gestão de leads'}</div>
+                    <div className="text-[13px] text-ink-600">{isInd ? 'Com o seu consultor (contratante) · 2 testemunhas · sem vínculo CLT' : 'Com a Geralindica · sem vínculo CLT · foro Rio de Janeiro/RJ'}</div>
                   </div>
                 </div>
                 <ul className="m-0 pl-5 text-[14px] leading-[1.7] text-ink-800">
                   {(isInd
                     ? [
-                        'Comissão de 50% do lucro líquido de cada adesão aprovada, paga pelo consultor via Pix.',
-                        'O consultor segura o pagamento até a entrevista de saúde e devolve 100% ao cliente se reprovado.',
-                        'Acesso apenas a dados não sensíveis dos clientes (LGPD).',
-                        'Autonomia total: sem subordinação, sem exclusividade.',
+                        '50% do lucro líquido da primeira parcela de cada cliente aprovado, pago pelo consultor em até 5 dias úteis.',
+                        'A indicação vale por 90 dias; se o cliente trocar de plano em até 10 anos, você recebe de novo.',
+                        'Estorno: você devolve ao consultor em até 3 dias úteis.',
+                        'Chat com o consultor monitorado por robô: sem telefone, e-mail, redes sociais ou profissão.',
                       ]
                     : [
-                        'Carteira de até 30 indicadores, com portabilidade livre.',
-                        'Atender o cliente, registrar cada venda na plataforma e fazer os Pix do indicador e da Geralindica.',
-                        'Tratamento de dados de saúde conforme LGPD e normas da ANS.',
-                        'Acompanhamento por relatórios do CRM, sem monitoramento de conversas.',
+                        'Pagar 50% do lucro líquido de cada venda ao indicador e dividir o restante (com a bonificação) meio a meio com a Geralindica.',
+                        'Parte da Geralindica até o dia 5 do mês seguinte, com juros de 1% ao dia de atraso.',
+                        'Trocas de plano em até 10 anos e comissões recorrentes também entram na divisão.',
+                        'Enviar o comprovante de habilitação ou vínculo com corretora; chat com indicadores monitorado por robô.',
                       ]
                   ).map((cl) => (
                     <li key={cl}>{cl}</li>

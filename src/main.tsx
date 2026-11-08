@@ -35,6 +35,9 @@ const Vendas = lazy(() => import('@/pages/admin/Vendas').then((m) => ({ default:
 const Split = lazy(() => import('@/pages/admin/Split').then((m) => ({ default: m.Split })))
 const Usuarios = lazy(() => import('@/pages/admin/Usuarios').then((m) => ({ default: m.Usuarios })))
 const Catalogo = lazy(() => import('@/pages/admin/Catalogo').then((m) => ({ default: m.Catalogo })))
+const ContratosAdmin = lazy(() => import('@/pages/admin/Contratos').then((m) => ({ default: m.Contratos })))
+const FechamentosAdmin = lazy(() => import('@/pages/admin/Fechamentos').then((m) => ({ default: m.Fechamentos })))
+const Mensagens = lazy(() => import('@/pages/Mensagens').then((m) => ({ default: m.Mensagens })))
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: true, staleTime: 15_000 } },
@@ -71,6 +74,7 @@ createRoot(document.getElementById('root')!).render(
                 <Route path="qr" element={<QrCodes />} />
                 <Route path="extrato" element={<Extrato />} />
                 <Route path="consultor" element={<MeuConsultor />} />
+                <Route path="mensagens" element={<Mensagens />} />
                 <Route path="dados" element={<MeusDados />} />
               </Route>
               <Route
@@ -86,6 +90,7 @@ createRoot(document.getElementById('root')!).render(
                 <Route path="leads/:id" element={<LeadDetalhe />} />
                 <Route path="indicadores" element={<MeusIndicadores />} />
                 <Route path="perfil" element={<PerfilPublico />} />
+                <Route path="mensagens" element={<Mensagens />} />
                 <Route path="dados" element={<DadosConsultor />} />
               </Route>
               <Route
@@ -99,6 +104,9 @@ createRoot(document.getElementById('root')!).render(
                 <Route index element={<Vendas />} />
                 <Route path="split" element={<Split />} />
                 <Route path="usuarios" element={<Usuarios />} />
+                <Route path="contratos" element={<ContratosAdmin />} />
+                <Route path="fechamentos" element={<FechamentosAdmin />} />
+                <Route path="mensagens" element={<Mensagens />} />
                 <Route path="catalogo" element={<Catalogo />} />
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />

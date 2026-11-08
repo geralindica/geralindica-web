@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { CardDadosContrato } from '@/components/painel/Contrato'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Info, Loader2, MessageCircle } from 'lucide-react'
 import { supabase, mensagemErro } from '@/lib/supabase'
@@ -75,6 +76,7 @@ export function MeusDados() {
   return (
     <>
       <h1 className="m-0 text-[26px] font-extrabold tracking-[-0.035em] sm:text-[30px]">Meus dados</h1>
+      <CardDadosContrato comTelefone={false} />
       <div className="grid items-start gap-5 lg:grid-cols-2">
         <Card className="flex flex-col gap-3 p-[22px]">
           <span className="flex items-center gap-2 text-[16px] font-extrabold">

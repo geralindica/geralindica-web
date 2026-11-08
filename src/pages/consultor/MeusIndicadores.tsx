@@ -8,6 +8,7 @@ import { AtivoBadge } from '@/components/ui/badges'
 import { Card } from '@/components/painel/comum'
 import { Carregando, ErroBox, Vazio, useToast } from '@/components/ui/feedback'
 import { useMeuConsultor, useMeusIndicadores } from './dados'
+import { ContratosDaCarteira } from '@/components/painel/Contrato'
 
 const NOVENTA_DIAS = 90 * 86400_000
 
@@ -119,6 +120,7 @@ export function MeusIndicadores() {
           </div>
         </Card>
       )}
+      <ContratosDaCarteira />
     </>
   )
 }

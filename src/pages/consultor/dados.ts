@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/auth/AuthProvider'
 import { ETAPAS_FINAIS, calcularSplit } from '@/lib/negocio'
-import type { ConsultorRow, LeadComOrigem, LeadEvento, Venda } from '@/lib/types'
+import type { ConsultorRow, LeadComOrigem, LeadEvento, Recebimento, Venda } from '@/lib/types'
 
 /** Data no fuso do navegador, no formato AAAA-MM-DD. */
 const diaLocal = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -57,16 +57,21 @@ export function useLead(id: string | undefined) {
       const [lead, eventos, venda] = await Promise.all([
         supabase.from('leads').select(SELECT_LEAD).eq('id', id!).maybeSingle(),
         supabase.from('lead_eventos').select('*').eq('lead_id', id!).order('created_at'),
-        supabase.from('vendas').select('*').eq('lead_id', id!).maybeSingle(),
+        supabase.from('vendas').select('*').eq('lead_id', id!).order('created_at'),
       ])
       if (lead.error) throw lead.error
       if (eventos.error) throw eventos.error
       if (venda.error) throw venda.error
-      const v = venda.data as Venda | null
+      const vendas = ((venda.data ?? []) as Venda[]).map((v) => ({ ...v, valor_adesao: Number(v.valor_adesao) }))
+      const ids = vendas.map((v) => v.id)
+      const rec = ids.length ? await supabase.from('venda_recebimentos').select('*').in('venda_id', ids).order('recebido_em') : { data: [], error: null }
+      if (rec.error) throw rec.error
       return {
         lead: lead.data ? normalizar(lead.data as LeadBruto) : null,
         eventos: (eventos.data ?? []) as LeadEvento[],
-        venda: v ? { ...v, valor_adesao: Number(v.valor_adesao) } : null,
+        venda: vendas.find((v) => v.tipo === 'nova') ?? null,
+        trocas: vendas.filter((v) => v.tipo === 'troca_plano'),
+        recebimentos: ((rec.data ?? []) as Recebimento[]).map((r) => ({ ...r, valor: Number(r.valor) })),
       }
     },
   })
@@ -88,7 +93,7 @@ export function useDashboard() {
         supabase.from('vendas').select('id', { count: 'exact', head: true }).eq('consultor_id', me).eq('status', 'aprovado').gte('data_venda', diaLocal(inicioMes)),
         supabase.from('vendas').select('id', { count: 'exact', head: true }).eq('consultor_id', me).eq('status', 'aprovado').gte('data_venda', diaLocal(inicioMesAnt)).lt('data_venda', diaLocal(mesmoDiaMesAnt)),
         supabase.from('leads').select('created_at').eq('consultor_id', me).gte('created_at', desde30).limit(2000),
-        supabase.from('vendas').select('status, valor_adesao, data_venda, aliquota, bonificacao_pct').eq('consultor_id', me).in('status', ['aguardando_entrevista', 'aprovado']).limit(2000),
+        supabase.from('vendas').select('status, valor_adesao, data_venda, aliquota, bonificacao_pct, indicacao_valida').eq('consultor_id', me).in('status', ['aguardando_entrevista', 'aprovado']).limit(2000),
         supabase.from('config_split').select('pct_indicador, pct_consultor_restante').eq('id', 1).single(),
       ])
       for (const r of [mes, mesAnt, porDia, vd, cfg]) if (r.error) throw r.error
@@ -103,13 +108,13 @@ export function useDashboard() {
         const d = dias.find((x) => x.dia === k)
         if (d) d.n++
       }
-      const vendas = (vd.data ?? []) as { status: string; valor_adesao: number; data_venda: string; aliquota: number; bonificacao_pct: number | null }[]
+      const vendas = (vd.data ?? []) as { status: string; valor_adesao: number; data_venda: string; aliquota: number; bonificacao_pct: number | null; indicacao_valida: boolean }[]
       const aprovadasMes = vendas.filter((v) => v.status === 'aprovado' && v.data_venda >= diaLocal(inicioMes))
       const aguardando = vendas.filter((v) => v.status === 'aguardando_entrevista')
       // Pix do mês: o mesmo cálculo de private.split_venda(), com o imposto e a bonificação gravados em cada venda.
       const c = cfg.data as { pct_indicador: number; pct_consultor_restante: number | null }
       const pctCon = c.pct_consultor_restante == null ? null : Number(c.pct_consultor_restante)
-      const splits = aprovadasMes.map((v) => calcularSplit(Number(v.valor_adesao), Number(v.aliquota), Number(c.pct_indicador), pctCon, v.bonificacao_pct == null ? 0 : Number(v.bonificacao_pct)))
+      const splits = aprovadasMes.map((v) => calcularSplit(Number(v.valor_adesao), Number(v.aliquota), Number(c.pct_indicador), pctCon, v.bonificacao_pct == null ? 0 : Number(v.bonificacao_pct), v.indicacao_valida))
       return {
         pixIndicadores: splits.reduce((a, s) => a + s.indicador, 0),
         pixGeralindica: pctCon == null ? null : splits.reduce((a, s) => a + (s.geralindica ?? 0), 0),

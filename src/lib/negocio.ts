@@ -11,11 +11,12 @@ export const round2 = (v: number) => Math.round(v * 100) / 100
  * bolo = 145 (parte do consultor na adesão) + 290 = 435 → 217,50 consultor e 217,50 Geralindica.
  * Imposto não definido conta como zero; divisão consultor x Geralindica não definida devolve null nessas duas partes.
  */
-export function calcularSplit(valor: number, aliquotaPct: number | null, pctIndicador: number, pctConsultor: number | null, bonificacaoPct: number | null = 0) {
+export function calcularSplit(valor: number, aliquotaPct: number | null, pctIndicador: number, pctConsultor: number | null, bonificacaoPct: number | null = 0, comIndicador = true) {
   const fator = 1 - (aliquotaPct ?? 0) / 100
   const liquido = round2(valor * fator)
   const imposto = round2(valor - liquido)
-  const indicador = round2((liquido * pctIndicador) / 100)
+  // Sem indicação válida (lead com mais de 90 dias, cláusula 4.1), a parte do indicador fica no bolo.
+  const indicador = comIndicador ? round2((liquido * pctIndicador) / 100) : 0
   const consultorAdesao = round2(liquido - indicador)
   const bonificacaoBruta = round2((valor * (bonificacaoPct ?? 0)) / 100)
   const bonificacao = round2(((valor * (bonificacaoPct ?? 0)) / 100) * fator)
@@ -129,12 +130,37 @@ export const STATUS_VENDA: Record<StatusVenda, { label: string; bg: string; fg: 
   aguardando_entrevista: { label: 'Aguardando entrevista', bg: '#FFF3D6', fg: '#9A5B00', avBg: '#FFF3D6', avFg: '#9A5B00', nota: 'O cliente pagou ao consultor, que segura o valor até a entrevista de saúde.' },
   aprovado: { label: 'Verdinho ✓', bg: '#0F9D58', fg: '#fff', avBg: '#ECF8F1', avFg: '#0A7F47', nota: 'Entrevista aprovada. O consultor faz o Pix da sua parte.' },
   reprovado: { label: 'Reprovado', bg: '#FCEAE8', fg: '#B3372F', avBg: '#FCEAE8', avFg: '#B3372F', nota: 'Cliente reprovado na entrevista de saúde. O consultor devolveu o valor; não há comissão.' },
+  estornado: { label: 'Estornada', bg: '#EAEFF5', fg: '#4A5B70', avBg: '#EAEFF5', avFg: '#4A5B70', nota: 'O cliente cancelou ou a operadora estornou depois do Verdinho. Se você já recebeu, devolve ao consultor em até 3 dias úteis (cláusula 5.1).' },
 }
 export const STATUS_VENDA_OPCOES: { v: StatusVenda; label: string }[] = [
   { v: 'aguardando_entrevista', label: 'Aguardando entrevista' },
   { v: 'aprovado', label: 'Aprovado no Verdinho' },
   { v: 'reprovado', label: 'Reprovado e devolvido' },
 ]
+
+// ---------- Prazos dos contratos ----------
+/** Validade da indicação: 90 dias contados do registro do lead (cláusula 4.1 do contrato do indicador). */
+export const VALIDADE_LEAD_DIAS = 90
+export function validadeLead(criadoEm: string) {
+  const d = new Date(criadoEm)
+  d.setDate(d.getDate() + VALIDADE_LEAD_DIAS)
+  return d
+}
+
+/** Soma dias úteis (seg. a sex.; não considera feriados). */
+export function somarDiasUteis(inicio: Date | string, dias: number) {
+  const d = new Date(typeof inicio === 'string' && inicio.length === 10 ? inicio + 'T12:00' : inicio)
+  let n = 0
+  while (n < dias) {
+    d.setDate(d.getDate() + 1)
+    if (d.getDay() !== 0 && d.getDay() !== 6) n++
+  }
+  return d
+}
+
+/** Mês por extenso a partir de AAAA-MM-DD. */
+export const mesBR = (iso: string) => new Date(iso.slice(0, 10) + 'T12:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+export const diaBR = (iso: string) => new Date(iso.slice(0, 10) + 'T12:00').toLocaleDateString('pt-BR')
 
 // ---------- Temperatura (reputação do consultor) ----------
 // O número (0 a 100) vem pronto do banco. Aqui só as faixas para exibir. PROVISÓRIO, como a fórmula.

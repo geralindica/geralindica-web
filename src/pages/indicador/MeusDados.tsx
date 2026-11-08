@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/form'
 import { Card, Segmentado } from '@/components/painel/comum'
 import { useToast } from '@/components/ui/feedback'
+import { CardDadosContrato } from '@/components/painel/Contrato'
 
 /** Dados do indicador: PF ou PJ (cadastro). O imposto da conta é o do consultor. O Pix é combinado direto com ele. */
 export function MeusDados() {
@@ -34,6 +35,8 @@ export function MeusDados() {
   return (
     <>
       <h1 className="m-0 text-[24px] font-extrabold tracking-[-0.03em]">Meus dados</h1>
+
+      <CardDadosContrato />
 
       <Card className="flex flex-col gap-3 rounded-[20px] p-[18px]">
         <span className="text-[16px] font-extrabold">Como você recebe</span>
@@ -73,7 +76,7 @@ export function MeusDados() {
       <div className="flex items-start gap-2.5 rounded-[16px] bg-ink-50 px-4 py-3.5 text-[13px] leading-[1.55] text-ink-600">
         <Info size={18} className="mt-px shrink-0" />
         <span>
-          A Geralindica não faz pagamentos. Depois que a entrevista de saúde do cliente é aprovada, o seu consultor manda a sua parte por Pix. Combine a chave Pix direto com ele.
+          A Geralindica não faz pagamentos. Depois que a entrevista de saúde do cliente é aprovada, o seu consultor manda a sua parte por Pix. Combine os dados da conta com ele pelo chat em Mensagens.
         </span>
       </div>
     </>

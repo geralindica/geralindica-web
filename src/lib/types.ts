@@ -14,7 +14,7 @@ export type Etapa =
   | 'perdido'
 
 /** Venda registrada pelo consultor (o dinheiro nunca passa pela plataforma). */
-export type StatusVenda = 'aguardando_entrevista' | 'aprovado' | 'reprovado'
+export type StatusVenda = 'aguardando_entrevista' | 'aprovado' | 'reprovado' | 'estornado'
 
 export type Profile = {
   id: string
@@ -24,11 +24,17 @@ export type Profile = {
   documento: string | null
   telefone: string | null
   email: string | null
-  /** Preenchido só pelo admin, depois de conferir o PDF assinado no Gov.br. */
+  /** Preenchido só quando o contrato fica vigente (a Geralindica confere no final). */
   contrato_assinado_em: string | null
-  /** PDF assinado enviado pela pessoa (bucket "contratos"), aguardando conferência. */
-  contrato_arquivo: string | null
-  contrato_enviado_em: string | null
+  /** Pedidos pelos contratos do Luis (qualificação das partes). */
+  rg: string | null
+  endereco: string | null
+  /** Consultor: comprovante de habilitação ou vínculo com corretora (cláusula 2.3). */
+  habilitacao_arquivo: string | null
+  habilitacao_enviada_em: string | null
+  /** Removido do site pela Geralindica. */
+  suspenso_em: string | null
+  suspenso_motivo: string | null
   created_at: string
 }
 
@@ -110,7 +116,15 @@ export type VendaIndicador = {
   valor_adesao: number
   /** Quanto o consultor deve repassar ao indicador. Só informativo. */
   estimativa: number
+  tipo: TipoVenda
+  /** false = fechada mais de 90 dias depois do registro do lead (sem parte do indicador). */
+  indicacao_valida: boolean
+  aprovado_em: string | null
+  estornado_em: string | null
+  indicador_pago_em: string | null
 }
+
+export type TipoVenda = 'nova' | 'troca_plano'
 
 export type Venda = {
   id: string
@@ -126,8 +140,57 @@ export type Venda = {
   aliquota: number
   /** Bonificação da operadora depois do Verdinho (% do valor da adesão). */
   bonificacao_pct: number | null
+  tipo: TipoVenda
+  venda_origem: string | null
+  indicacao_valida: boolean
+  aprovado_em: string | null
+  estornado_em: string | null
+  indicador_pago_em: string | null
   created_at: string
   updated_at: string
+}
+
+export type Recebimento = { id: string; venda_id: string; valor: number; aliquota: number; recebido_em: string; descricao: string | null }
+
+export type EtapaContrato = 'parte' | 'consultor' | 'geralindica' | 'vigente' | 'encerrado'
+
+export type ParteContrato = {
+  nome: string
+  tipo_pessoa: TipoPessoa
+  documento: string | null
+  rg: string | null
+  endereco: string | null
+  email: string | null
+  telefone: string | null
+}
+
+/** Tudo o que o PDF do contrato precisa (public.contrato_dados). */
+export type DadosContrato = {
+  id: string
+  tipo: 'indicador' | 'consultor'
+  etapa: EtapaContrato
+  versao: string
+  arquivo: string | null
+  observacao: string | null
+  created_at: string
+  parte_assinou_em: string | null
+  consultor_assinou_em: string | null
+  vigente_em: string | null
+  parte: ParteContrato
+  consultor: ParteContrato
+  testemunhas: { nome: string | null; cpf: string | null; email: string | null }[]
+}
+
+export type Fechamento = {
+  consultor_id: string
+  consultor: string
+  mes: string
+  vencimento: string
+  valor: number
+  pago_em: string | null
+  valor_pago: number | null
+  dias_atraso: number
+  juros: number
 }
 
 export type Canal = {

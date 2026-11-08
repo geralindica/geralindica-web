@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Clock, Thermometer, Undo2 } from 'lucide-react'
+import { Ban, Clock, Thermometer, Undo2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CheckCircleFilled } from '@/components/icons'
 import { STATUS_VENDA, faixaTemperatura } from '@/lib/negocio'
@@ -19,6 +19,7 @@ const statusIcon: Record<StatusVenda, ReactNode> = {
   aguardando_entrevista: <Clock size={13} strokeWidth={2.5} />,
   aprovado: <CheckCircleFilled size={13} />,
   reprovado: <Undo2 size={13} strokeWidth={2.5} />,
+  estornado: <Ban size={13} strokeWidth={2.5} />,
 }
 
 /** Badge do status da venda registrada pelo consultor. */
@@ -66,17 +67,18 @@ export function TopBadge({ small }: { small?: boolean }) {
   return <Pill className={cn('bg-ink-950 text-white', small && 'px-[9px] py-0.5 text-[11px]')}>Top 10</Pill>
 }
 
-export function GovBadge({ assinado, enviado = false }: { assinado: boolean; enviado?: boolean }) {
-  return (
-    <span
-      className={cn(
-        'inline-flex items-center gap-1 justify-self-start whitespace-nowrap rounded-full px-[10px] py-[3px] text-[12px] font-bold',
-        assinado ? 'bg-azul-bg text-azul-fg' : enviado ? 'bg-verde-bg text-verde-fg' : 'bg-ambar-bg text-ambar-fg',
-      )}
-    >
-      {assinado ? '✓ Assinado' : enviado ? '📄 Conferir' : '⏳ Pendente'}
-    </span>
-  )
+const ETAPA_CONTRATO: Record<string, { label: string; cls: string }> = {
+  parte: { label: '⏳ Falta a pessoa assinar', cls: 'bg-ambar-bg text-ambar-fg' },
+  consultor: { label: '✍️ Falta o consultor', cls: 'bg-ambar-bg text-ambar-fg' },
+  geralindica: { label: '📄 Conferir', cls: 'bg-verde-bg text-verde-fg' },
+  vigente: { label: '✓ Vigente', cls: 'bg-azul-bg text-azul-fg' },
+  encerrado: { label: 'Encerrado', cls: 'bg-ink-100 text-ink-600' },
+}
+
+/** Etapa do contrato (Gov.br): parte → consultor (só indicador) → Geralindica → vigente. */
+export function GovBadge({ etapa }: { etapa: string | null | undefined }) {
+  const e = ETAPA_CONTRATO[etapa ?? ''] ?? { label: 'Sem contrato', cls: 'bg-ink-100 text-ink-600' }
+  return <span className={cn('inline-flex items-center gap-1 justify-self-start whitespace-nowrap rounded-full px-[10px] py-[3px] text-[12px] font-bold', e.cls)}>{e.label}</span>
 }
 
 export function AtivoBadge({ ativo }: { ativo: boolean }) {

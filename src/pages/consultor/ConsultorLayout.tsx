@@ -1,9 +1,10 @@
-import { IdCard, KanbanSquare, LayoutDashboard, Store, Users } from 'lucide-react'
+import { IdCard, KanbanSquare, LayoutDashboard, MessageCircle, Store, Users } from 'lucide-react'
 import { PainelLayout, type NavItem } from '@/components/painel/PainelLayout'
 import { useConsultores } from '@/data/queries'
 import { usePerfil } from '@/auth/AuthProvider'
 import { useLeadsCRM, useMeuConsultor } from './dados'
 import { ETAPAS_FINAIS } from '@/lib/negocio'
+import { useNaoLidas } from '@/pages/Mensagens'
 
 export function ConsultorLayout() {
   const p = usePerfil()
@@ -12,11 +13,13 @@ export function ConsultorLayout() {
   const ranking = useConsultores()
   const ativos = (leads.data ?? []).filter((l) => !ETAPAS_FINAIS.includes(l.etapa)).length
   const rank = ranking.data?.find((c) => c.id === p.id)?.rank
+  const naoLidas = useNaoLidas()
 
   const nav: NavItem[] = [
     { to: '/consultor', label: 'Dashboard', icon: LayoutDashboard, end: true },
     { to: '/consultor/leads', label: 'Leads', icon: KanbanSquare, badge: ativos || undefined },
     { to: '/consultor/indicadores', label: 'Meus indicadores', short: 'Indicadores', icon: Users },
+    { to: '/consultor/mensagens', label: 'Mensagens', icon: MessageCircle, badge: naoLidas || undefined },
     { to: '/consultor/perfil', label: 'Perfil público', short: 'Perfil', icon: Store },
     { to: '/consultor/dados', label: 'Meus dados', short: 'Dados', icon: IdCard },
   ]

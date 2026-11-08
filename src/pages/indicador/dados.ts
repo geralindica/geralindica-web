@@ -36,6 +36,26 @@ export function useFunil() {
   })
 }
 
+export type MesRelatorio = { mes: string; pendentes: number; em_atendimento: number; convertidas: number; canceladas: number; expiradas: number }
+
+export function useRelatorio() {
+  return useQuery({
+    queryKey: ['ind', 'relatorio'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('relatorio_indicador')
+      if (error) throw error
+      return ((data ?? []) as MesRelatorio[]).map((m) => ({
+        mes: String(m.mes),
+        pendentes: Number(m.pendentes),
+        em_atendimento: Number(m.em_atendimento),
+        convertidas: Number(m.convertidas),
+        canceladas: Number(m.canceladas),
+        expiradas: Number(m.expiradas),
+      }))
+    },
+  })
+}
+
 export function useCanais() {
   const { session } = useAuth()
   return useQuery({
@@ -67,7 +87,7 @@ export function useMeuVinculo() {
 
 /** Estimativas do que o consultor deve repassar (a plataforma não paga nada). */
 export function totaisVendas(itens: VendaIndicador[] | undefined) {
-  const soma = (st: StatusVenda) => (itens ?? []).filter((v) => v.status === st).reduce((a, v) => a + v.estimativa, 0)
+  const soma = (st: StatusVenda) => (itens ?? []).filter((v) => v.status === st && v.indicacao_valida).reduce((a, v) => a + v.estimativa, 0)
   return { aprovado: soma('aprovado'), aguardando: soma('aguardando_entrevista') }
 }
 
