@@ -41,7 +41,7 @@ export function TituloPagina({ titulo, sub, children }: { titulo: string; sub?: 
 /** Linha de venda do indicador (só o primeiro nome do cliente, LGPD). */
 export function LinhaVenda({ v, onClick, mostrarCanal }: { v: VendaIndicador; onClick: () => void; mostrarCanal?: boolean }) {
   const s = STATUS_VENDA[v.status]
-  const cor = v.status === 'reprovado' ? '#8494A8' : v.status === 'aguardando_entrevista' ? '#4A5B70' : '#0B1A30'
+  const cor = v.status === 'reprovado' ? '#8494A8' : v.status === 'aguardando_entrevista' ? '#4A5B70' : '#0B2A66'
   return (
     <button
       type="button"
@@ -72,7 +72,7 @@ export function DetalheVenda({ v, config }: { v: VendaIndicador; config: ConfigS
   const s = STATUS_VENDA[v.status]
   return (
     <>
-      <Logo small className="text-[15px] text-ink-600 [&>img]:size-5" />
+      <Logo small />
       <div className="flex items-center gap-3 rounded-[14px] bg-ink-50 p-3">
         <span className="flex size-10 items-center justify-center rounded-[12px] font-extrabold" style={{ background: s.avBg, color: s.avFg }}>
           {v.cliente[0]}

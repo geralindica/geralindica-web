@@ -369,7 +369,7 @@ export function Cadastro() {
               <p className="m-0 max-w-[440px] text-[16px] leading-[1.55] text-ink-600">
                 {isInd
                   ? 'Seu primeiro QR Code já está pronto. Imprima a capa de encosto ou compartilhe o link e comece a indicar hoje.'
-                  : 'Seu perfil já aparece na vitrine. Assim que indicadores entrarem na sua carteira, os leads chegam no seu CRM.'}
+                  : 'A Geralindica vai conferir o seu cadastro. Depois da aprovação, seu perfil aparece na vitrine e os indicadores podem entrar na sua carteira.'}
               </p>
               <div className="flex items-center gap-[10px] rounded-[12px] bg-azul-bg px-4 py-[10px] text-[13px] font-bold text-azul-fg">
                 <ShieldCheck size={18} />

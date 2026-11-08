@@ -47,7 +47,7 @@ export function PerfilPublico() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['con', 'me'] })
       qc.invalidateQueries({ queryKey: ['consultores'] })
-      toast(f.publicado ? 'Perfil salvo e publicado na vitrine.' : 'Perfil salvo (oculto da vitrine).')
+      toast(!f.publicado ? 'Perfil salvo (oculto da vitrine).' : me.data?.aprovado ? 'Perfil salvo e publicado na vitrine.' : 'Perfil salvo. Ele aparece na vitrine depois que a Geralindica aprovar.')
     },
     onError: (e) => toast(mensagemErro(e), 'erro'),
   })

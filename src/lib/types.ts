@@ -43,6 +43,8 @@ export type ConsultorRow = {
   max_indicadores: number
   nota: number | null
   publicado: boolean
+  /** Liberado pelo admin; sem isso não aparece na vitrine nem recebe indicadores. */
+  aprovado: boolean
   vendas: number
   leads_total: number
   vendas_30d: number

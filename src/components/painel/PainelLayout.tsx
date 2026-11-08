@@ -50,7 +50,7 @@ export function PainelLayout({ nav, subtitulo, papelLabel, foto, escuro, barraIn
         )}
       >
         <Link to="/" className="px-2.5 pt-1" aria-label="Site da Geralindica">
-          <Logo className={cn('text-[22px]', escuro && 'text-white')} />
+          <Logo branca={escuro} />
         </Link>
         <span className="px-2.5 pb-4 text-[11px] font-bold uppercase tracking-[.08em] text-ink-400">{subtitulo}</span>
         <nav className="flex flex-col gap-1">
@@ -86,7 +86,7 @@ export function PainelLayout({ nav, subtitulo, papelLabel, foto, escuro, barraIn
         <header className={cn('sticky top-0 z-30 lg:hidden', escuro ? 'bg-ink-950 text-white' : 'border-b border-ink-200 bg-white/95 backdrop-blur')}>
           <div className="flex items-center gap-3 px-[18px] py-3">
             <Link to="/" aria-label="Site da Geralindica">
-              <Logo className={cn('text-[22px]', escuro && 'text-white')} />
+              <Logo branca={escuro} />
             </Link>
             <span className="text-[11px] font-bold uppercase tracking-[.08em] text-ink-400">{subtitulo}</span>
             <button type="button" onClick={signOut} className="ml-auto flex cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5 text-[13px] font-bold text-ink-400">

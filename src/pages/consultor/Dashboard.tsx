@@ -69,6 +69,13 @@ export function Dashboard() {
         </Link>
       </div>
 
+      {!c.aprovado && (
+        <div className="flex items-start gap-3 rounded-[16px] bg-ambar-bg px-4 py-3 text-[14px] font-semibold leading-[1.5] text-ambar-fg">
+          <Hourglass size={20} className="mt-px shrink-0" />
+          Seu cadastro está em análise. Seu perfil aparece na vitrine e os indicadores podem entrar na sua carteira depois que a Geralindica aprovar.
+        </div>
+      )}
+
       <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-3.5">
         <Kpi icon={<Handshake size={19} className="text-verde-600" />} rotulo="Vendas no mês" valor={String(d.vendasMes)}>
           {variacao !== null && (
