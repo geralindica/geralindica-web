@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Ban, Clock, Thermometer, Undo2 } from 'lucide-react'
+import { Clock, Thermometer, Undo2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CheckCircleFilled } from '@/components/icons'
 import { STATUS_VENDA, faixaTemperatura } from '@/lib/negocio'
@@ -19,7 +19,6 @@ const statusIcon: Record<StatusVenda, ReactNode> = {
   aguardando_entrevista: <Clock size={13} strokeWidth={2.5} />,
   aprovado: <CheckCircleFilled size={13} />,
   reprovado: <Undo2 size={13} strokeWidth={2.5} />,
-  estornado: <Ban size={13} strokeWidth={2.5} />,
 }
 
 /** Badge do status da venda registrada pelo consultor. */

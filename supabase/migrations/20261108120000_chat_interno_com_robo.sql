@@ -2,7 +2,7 @@
 -- • Indicador ↔ consultor da carteira: só para falar de ganhos e dados de conta. O robô barra telefone, e-mail,
 --   redes sociais/links, profissão e "como você faz as indicações". Mensagem barrada não é entregue e vira alerta
 --   para o admin, que pode cancelar os dois contratos e tirar os dois do site.
--- • Consultor ↔ Geralindica (indicador_id nulo): acertos, estornos e suporte. Sem robô.
+-- • Consultor ↔ Geralindica (indicador_id nulo): acertos de pagamento e suporte. Sem robô.
 -- O admin lê todas as conversas (monitoramento).
 
 create table public.mensagens (
@@ -136,7 +136,7 @@ begin
          when v = conv.i then k.nome_exibicao
          when v = conv.c then p.nome
          else p.nome || ' × ' || k.nome_exibicao end,
-    case when conv.i is null then (case when v = conv.c then 'Acertos, estornos e suporte' else 'Consultor' end)
+    case when conv.i is null then (case when v = conv.c then 'Acertos de pagamento e suporte' else 'Consultor' end)
          when v = conv.i then 'Seu consultor'
          when v = conv.c then 'Indicador da sua carteira'
          else 'Monitorada pelo robô · só leitura' end,

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Info, Lock, ShieldCheck } from 'lucide-react'
 import { brl, cn } from '@/lib/utils'
-import { dataBR, diaBR, somarDiasUteis, STATUS_VENDA, pct } from '@/lib/negocio'
+import { dataBR, diaBR, somarDiasUteis, STATUS_VENDA } from '@/lib/negocio'
 import type { ConfigSplit, VendaIndicador } from '@/lib/types'
 import { StatusBadge } from '@/components/ui/badges'
 import { Logo } from '@/components/Logo'
@@ -41,7 +41,7 @@ export function TituloPagina({ titulo, sub, children }: { titulo: string; sub?: 
 /** Linha de venda do indicador (só o primeiro nome do cliente, LGPD). */
 export function LinhaVenda({ v, onClick, mostrarCanal }: { v: VendaIndicador; onClick: () => void; mostrarCanal?: boolean }) {
   const s = STATUS_VENDA[v.status]
-  const semValor = v.status === 'reprovado' || v.status === 'estornado' || !v.indicacao_valida
+  const semValor = v.status === 'reprovado'
   const cor = semValor ? '#8494A8' : v.status === 'aguardando_entrevista' ? '#4A5B70' : '#0B2A66'
   return (
     <button
@@ -87,27 +87,19 @@ export function DetalheVenda({ v, config }: { v: VendaIndicador; config: ConfigS
         </div>
         <StatusBadge status={v.status} size="md" />
       </div>
-      <Linha k="Valor da adesão" v={brl(v.valor_adesao)} />
       <Linha k="Consultor" v={v.consultor} />
       {v.tipo === 'troca_plano' && <Linha k="Tipo" v="Troca de plano (cláusula de 10 anos)" />}
-      {config && <Linha k="Sua parte" v={`${pct(config.pct_indicador)} do líquido`} />}
       <div className="border-t border-dashed border-ink-200" />
       <div className="flex justify-between text-[15px]">
-        <span className="font-bold">Você deve receber (estimativa)</span>
+        <span className="font-bold">Seu marketing (estimativa)</span>
         <span className="font-extrabold text-verde-700">{brl(v.estimativa)}</span>
       </div>
       <div className="rounded-[12px] px-3 py-2.5 text-[13px] leading-[1.5] text-ink-600" style={{ background: s.avBg }}>
-        {!v.indicacao_valida
-          ? 'O cliente fechou mais de 90 dias depois do primeiro contato. Pela cláusula 4.1 do contrato, a indicação perdeu a validade e não há valor para você.'
-          : v.status === 'estornado'
-            ? v.indicador_pago_em
-              ? `Estornada${v.estornado_em ? ` em ${dataBR(v.estornado_em)}` : ''}. Você já recebeu ${brl(v.estimativa)}: devolva ao consultor em até 3 dias úteis${v.estornado_em ? ` (até ${somarDiasUteis(v.estornado_em, 3).toLocaleDateString('pt-BR')})` : ''}, cláusula 5.1.`
-              : 'Estornada antes do seu Pix: não há valor a receber nem a devolver.'
-            : v.status === 'aprovado'
-              ? v.indicador_pago_em
-                ? `O consultor marcou o seu Pix como feito em ${diaBR(v.indicador_pago_em)}.`
-                : `${s.nota}${v.aprovado_em ? ` Prazo: até ${somarDiasUteis(v.aprovado_em, 5).toLocaleDateString('pt-BR')} (5 dias úteis).` : ''}`
-              : s.nota}
+        {v.status === 'aprovado'
+          ? v.indicador_pago_em
+            ? `O consultor marcou o seu Pix como feito em ${diaBR(v.indicador_pago_em)}.`
+            : `${s.nota}${v.aprovado_em ? ` Prazo: até ${somarDiasUteis(v.aprovado_em, 5).toLocaleDateString('pt-BR')} (5 dias úteis).` : ''}`
+          : s.nota}
       </div>
       <AvisoPagamento semImposto={config ? config.aliquota_pf == null || config.aliquota_pj == null : false} />
       <SeloLGPD />
@@ -121,7 +113,7 @@ export function AvisoPagamento({ semImposto }: { semImposto?: boolean }) {
     <div className="flex items-start gap-2 rounded-[12px] border border-ink-200 bg-white px-3 py-2.5 text-[12px] leading-[1.5] text-ink-600">
       <Info size={16} className="mt-px shrink-0" />
       <span>
-        Valor só informativo. Quem paga é o seu consultor, por Pix, depois da aprovação na entrevista de saúde. A Geralindica não recebe nem repassa dinheiro.
+        Valor só informativo, pelo seu marketing de indicação. Quem paga é o seu consultor, por Pix, depois da aprovação na entrevista de saúde. A Geralindica não recebe nem repassa dinheiro.
         {semImposto && ' O imposto ainda não foi definido, então a estimativa ainda não desconta imposto.'}
       </span>
     </div>

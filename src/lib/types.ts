@@ -14,7 +14,7 @@ export type Etapa =
   | 'perdido'
 
 /** Venda registrada pelo consultor (o dinheiro nunca passa pela plataforma). */
-export type StatusVenda = 'aguardando_entrevista' | 'aprovado' | 'reprovado' | 'estornado'
+export type StatusVenda = 'aguardando_entrevista' | 'aprovado' | 'reprovado'
 
 export type Profile = {
   id: string
@@ -117,10 +117,7 @@ export type VendaIndicador = {
   /** Quanto o consultor deve repassar ao indicador. Só informativo. */
   estimativa: number
   tipo: TipoVenda
-  /** false = fechada mais de 90 dias depois do registro do lead (sem parte do indicador). */
-  indicacao_valida: boolean
   aprovado_em: string | null
-  estornado_em: string | null
   indicador_pago_em: string | null
 }
 
@@ -142,9 +139,7 @@ export type Venda = {
   bonificacao_pct: number | null
   tipo: TipoVenda
   venda_origem: string | null
-  indicacao_valida: boolean
   aprovado_em: string | null
-  estornado_em: string | null
   indicador_pago_em: string | null
   created_at: string
   updated_at: string

@@ -205,7 +205,7 @@ function Conversa({ c, voltar }: { c: Conversa; voltar: () => void }) {
         {msgs.isLoading ? (
           <Carregando />
         ) : !msgs.data?.length ? (
-          <div className="m-auto text-center text-[13px] text-ink-400">{comIndicador ? 'Comece a conversa: combine aqui os valores e os dados de conta para o Pix.' : 'Fale com a Geralindica sobre acertos, estornos e dúvidas.'}</div>
+          <div className="m-auto text-center text-[13px] text-ink-400">{comIndicador ? 'Comece a conversa: combine aqui os valores e os dados de conta para o Pix.' : 'Fale com a Geralindica sobre acertos de pagamento e dúvidas.'}</div>
         ) : (
           msgs.data.map((m) => {
             const mine = minha(m)

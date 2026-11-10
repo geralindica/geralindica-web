@@ -70,7 +70,7 @@ create table public.contratos (
   tipo text not null check (tipo in ('indicador','consultor')),
   parte_id uuid not null references public.profiles(id) on delete cascade,
   consultor_id uuid not null references public.consultores(id) on delete cascade,
-  versao text not null default '1 · 08/11/2026',
+  versao text not null default '2 · 10/11/2026',
   -- parte: falta a parte assinar · consultor: falta o consultor (contratante do indicador) · geralindica: falta a Geralindica
   etapa text not null default 'parte' check (etapa in ('parte','consultor','geralindica','vigente','encerrado')),
   arquivo text,

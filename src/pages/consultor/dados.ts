@@ -93,7 +93,7 @@ export function useDashboard() {
         supabase.from('vendas').select('id', { count: 'exact', head: true }).eq('consultor_id', me).eq('status', 'aprovado').gte('data_venda', diaLocal(inicioMes)),
         supabase.from('vendas').select('id', { count: 'exact', head: true }).eq('consultor_id', me).eq('status', 'aprovado').gte('data_venda', diaLocal(inicioMesAnt)).lt('data_venda', diaLocal(mesmoDiaMesAnt)),
         supabase.from('leads').select('created_at').eq('consultor_id', me).gte('created_at', desde30).limit(2000),
-        supabase.from('vendas').select('status, valor_adesao, data_venda, aliquota, bonificacao_pct, indicacao_valida').eq('consultor_id', me).in('status', ['aguardando_entrevista', 'aprovado']).limit(2000),
+        supabase.from('vendas').select('status, valor_adesao, data_venda, aliquota, bonificacao_pct').eq('consultor_id', me).in('status', ['aguardando_entrevista', 'aprovado']).limit(2000),
         supabase.from('config_split').select('pct_indicador, pct_consultor_restante').eq('id', 1).single(),
       ])
       for (const r of [mes, mesAnt, porDia, vd, cfg]) if (r.error) throw r.error
@@ -108,13 +108,13 @@ export function useDashboard() {
         const d = dias.find((x) => x.dia === k)
         if (d) d.n++
       }
-      const vendas = (vd.data ?? []) as { status: string; valor_adesao: number; data_venda: string; aliquota: number; bonificacao_pct: number | null; indicacao_valida: boolean }[]
+      const vendas = (vd.data ?? []) as { status: string; valor_adesao: number; data_venda: string; aliquota: number; bonificacao_pct: number | null }[]
       const aprovadasMes = vendas.filter((v) => v.status === 'aprovado' && v.data_venda >= diaLocal(inicioMes))
       const aguardando = vendas.filter((v) => v.status === 'aguardando_entrevista')
       // Pix do mês: o mesmo cálculo de private.split_venda(), com o imposto e a bonificação gravados em cada venda.
       const c = cfg.data as { pct_indicador: number; pct_consultor_restante: number | null }
       const pctCon = c.pct_consultor_restante == null ? null : Number(c.pct_consultor_restante)
-      const splits = aprovadasMes.map((v) => calcularSplit(Number(v.valor_adesao), Number(v.aliquota), Number(c.pct_indicador), pctCon, v.bonificacao_pct == null ? 0 : Number(v.bonificacao_pct), v.indicacao_valida))
+      const splits = aprovadasMes.map((v) => calcularSplit(Number(v.valor_adesao), Number(v.aliquota), Number(c.pct_indicador), pctCon, v.bonificacao_pct == null ? 0 : Number(v.bonificacao_pct)))
       return {
         pixIndicadores: splits.reduce((a, s) => a + s.indicador, 0),
         pixGeralindica: pctCon == null ? null : splits.reduce((a, s) => a + (s.geralindica ?? 0), 0),

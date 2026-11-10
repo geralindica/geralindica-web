@@ -61,8 +61,7 @@ export function Fechamentos() {
         </label>
       </TituloPagina>
       <p className="m-0 text-[14px] leading-[1.55] text-ink-600">
-        A parte da Geralindica de cada mês (vendas aprovadas, comissões recorrentes e trocas de plano, menos os estornos) vence no <b>dia 5 do mês seguinte</b>. Atraso: <b>1% ao dia</b> (cláusula 3.3 do consultor). Mês negativo é crédito do
-        consultor: devolva em até 5 dias ou compense no mês seguinte (cláusulas 5.2 e 5.3).
+        A parte da Geralindica de cada mês (vendas aprovadas, comissões recorrentes e trocas de plano) vence no <b>dia 5 do mês seguinte</b>. Atraso: <b>1% ao dia</b> (cláusula 3.3 do consultor).
       </p>
       <Card className="flex items-center justify-between p-4">
         <span className="text-[14px] font-semibold text-ink-600">Em aberto (com juros)</span>

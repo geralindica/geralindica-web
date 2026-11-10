@@ -258,9 +258,8 @@ const Lv = (await como('c1', `select public.criar_lead('Lead Velho', null, $1) a
 await db.query(`update public.leads set created_at = now() - interval '120 days' where id = $1`, [Lv])
 await como('c1', `select public.registrar_venda($1, 'Velho', $2, 1000, current_date, 'aprovado', 100)`, [Lv, kpj.codigo])
 const vv = (await como('ipj', `select * from public.vendas_indicador() where cliente = 'Velho'`)).rows?.[0]
-espera('lead com mais de 90 dias: indicação inválida e sem parte do indicador', sim(vv && vv.indicacao_valida === false && Number(vv.estimativa) === 0), true)
-const vvAdm = (await como('admin', `select * from public.admin_vendas() where cliente = 'Velho'`)).rows?.[0]
-espera(`sem indicação válida, o bolo inteiro é de consultor e Geralindica (${vvAdm?.estimativa_geralindica})`, sim(Number(vvAdm?.estimativa_geralindica) === 725), true)
+espera(`lead antigo (120 dias) continua pagando o indicador: sem prazo de validade (${vv?.estimativa})`, sim(vv && Number(vv.estimativa) === 362.5), true)
+espera('vendas não têm mais status de estorno', await como('c1', `select public.registrar_venda($1, 'Velho', $2, 1000, current_date, 'estornado', 100)`, [Lv, kpj.codigo]), false, 'Status inválido')
 const Ln = (await como('c1', `select public.criar_lead('Lead Novo', null, $1) as id`, [kpj.codigo])).rows[0].id
 const vn = (await como('c1', `select public.registrar_venda($1, 'Novo', $2, 1000, current_date, 'aprovado', 100) as id`, [Ln, kpj.codigo])).rows[0].id
 const exC = (await como('admin', `select estimativa_indicador i, estimativa_geralindica g from public.admin_vendas() where id = $1`, [vn])).rows[0]
@@ -270,8 +269,8 @@ espera('indicador vê que foi pago', sim((await como('ipj', `select indicador_pa
 espera('outro consultor não marca pagamento', await como('c2', `select public.marcar_indicador_pago($1, true)`, [vn]), false, 'não encontrada')
 espera('consultor registra comissão recorrente', await como('c1', `select public.registrar_recebimento($1, 200, current_date, 'Parcela 2')`, [vn]), true)
 const mesAtual = (await como('c1', `select * from public.fechamentos()`)).rows?.[0]
-// 543,75 (venda) + 725 (lead velho) + 200 × 72,5% × 50% = 72,50
-espera(`fechamento do mês soma vendas e recorrentes (${mesAtual?.valor})`, sim(Number(mesAtual?.valor) === 543.75 + 725 + 72.5), true)
+// 543,75 (venda) + 543,75 (lead velho) + 200 × 72,5% × 50% = 72,50
+espera(`fechamento do mês soma vendas e recorrentes (${mesAtual?.valor})`, sim(Number(mesAtual?.valor) === 543.75 + 543.75 + 72.5), true)
 espera(`fechamento vence no dia 5 do mês seguinte (${iso(mesAtual?.vencimento)})`, sim(iso(mesAtual?.vencimento).endsWith('-05')), true)
 espera('consultor não vê o fechamento de outro', sim((await como('c1', `select * from public.fechamentos($1)`, [u.c2])).rows.every((r) => r.consultor_id === u.c1)), true)
 espera('indicador não vê fechamentos', await como('i1', `select * from public.fechamentos()`), false, 'Apenas consultores')
@@ -280,16 +279,12 @@ const trocas = (await como('ipj', `select * from public.vendas_indicador() where
 espera(`indicador recebe de novo na troca de plano (${trocas[0]?.estimativa})`, sim(trocas.length === 1 && Number(trocas[0].estimativa) === 290), true)
 espera('troca de plano não conta como venda nova na temperatura', sim((await um(`select vendas from public.consultores where id = $1`, [u.c1])).vendas === 2), true)
 espera('troca depois de 10 anos é bloqueada', await como('c1', `select public.registrar_troca_plano($1, 800, (current_date + interval '11 years')::date, 'aprovado', 100)`, [vn]), false)
-const gTroca = Number((await como('admin', `select estimativa_geralindica g from public.admin_vendas() where tipo = 'troca_plano'`)).rows[0].g)
-espera('estorno de venda aprovada', await como('c1', `select public.estornar_venda($1)`, [vn]), true)
-espera('venda estornada não estorna de novo', await como('c1', `select public.estornar_venda($1)`, [vn]), false, 'Só venda aprovada')
-const fe2 = (await como('c1', `select * from public.fechamentos()`)).rows[0]
-espera(`estorno no mesmo mês sai do fechamento (${fe2?.valor})`, sim(Math.abs(Number(fe2?.valor) - (Number(mesAtual.valor) - 543.75 + gTroca)) < 0.001), true)
+espera('não existe mais função de estorno', sim(!(await um(`select to_regproc('public.estornar_venda') r`)).r), true)
 await db.query(`update public.vendas set aprovado_em = now() - interval '70 days' where id = $1`, [(await um(`select id from public.vendas where lead_id = $1`, [Lv])).id])
-const atrasado = (await como('c1', `select * from public.fechamentos()`)).rows.find((r) => Number(r.valor) === 725)
-espera(`mês vencido sem pagamento cobra 1% ao dia (${atrasado?.dias_atraso} dias, juros ${atrasado?.juros})`, sim(atrasado && atrasado.dias_atraso > 0 && Number(atrasado.juros) === Math.round(725 * 0.01 * atrasado.dias_atraso * 100) / 100), true)
-espera('consultor não registra o próprio pagamento', await como('c1', `select public.admin_registrar_fechamento($1, $2, current_date, 725)`, [u.c1, iso(atrasado?.mes)]), false, 'Apenas admin')
-espera('admin registra o pagamento do mês', await como('admin', `select public.admin_registrar_fechamento($1, $2, $3, 725)`, [u.c1, iso(atrasado?.mes), iso(atrasado?.vencimento)]), true)
+const atrasado = (await como('c1', `select * from public.fechamentos()`)).rows.find((r) => r.dias_atraso > 0)
+espera(`mês vencido sem pagamento cobra 1% ao dia (${atrasado?.dias_atraso} dias, juros ${atrasado?.juros})`, sim(atrasado && Number(atrasado.valor) === 543.75 && Number(atrasado.juros) === Math.round(543.75 * 0.01 * atrasado.dias_atraso * 100) / 100), true)
+espera('consultor não registra o próprio pagamento', await como('c1', `select public.admin_registrar_fechamento($1, $2, current_date, 543.75)`, [u.c1, iso(atrasado?.mes)]), false, 'Apenas admin')
+espera('admin registra o pagamento do mês', await como('admin', `select public.admin_registrar_fechamento($1, $2, $3, 543.75)`, [u.c1, iso(atrasado?.mes), iso(atrasado?.vencimento)]), true)
 espera('pago no dia não tem juros', sim(Number((await como('c1', `select juros from public.fechamentos() where mes = $1`, [iso(atrasado?.mes)])).rows[0].juros) === 0), true)
 const rel = await como('ipj', `select * from public.relatorio_indicador()`)
 espera('indicador vê o relatório mensal das indicações', sim(rel.ok && rel.rows.length >= 1), true)
@@ -319,7 +314,7 @@ const convC = (await como('c1', `select * from public.minhas_conversas() where i
 espera(`consultor vê a mensagem não lida (${convC?.nao_lidas})`, sim(Number(convC?.nao_lidas) === 1), true)
 await como('c1', `select public.marcar_lidas($1, $2)`, [u.c1, u.ipj])
 espera('lida zera o contador', sim(Number((await como('c1', `select nao_lidas from public.minhas_conversas() where indicador_id = $1`, [u.ipj])).rows[0].nao_lidas) === 0), true)
-espera('consultor fala com a Geralindica (sem robô)', sim((await msg('c1', null, 'Estornou a venda, me liga')).rows?.[0]?.r?.ok === true), true)
+espera('consultor fala com a Geralindica (sem robô)', sim((await msg('c1', null, 'O cliente foi aprovado, me liga')).rows?.[0]?.r?.ok === true), true)
 espera('admin responde na conversa da Geralindica', sim((await msg('admin', null, 'Recebido!')).rows?.[0]?.r?.ok === true), true)
 const convAdm = (await como('admin', `select * from public.minhas_conversas() where indicador_id = $1`, [u.ipj])).rows[0]
 espera('admin monitora a conversa do indicador, só leitura', sim(convAdm?.monitorada === true && convAdm?.pode_escrever === false), true)

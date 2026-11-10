@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Ban, Check, Plus, Repeat, Trash2, Wallet } from 'lucide-react'
+import { Check, Plus, Repeat, Trash2, Wallet } from 'lucide-react'
 import { supabase, mensagemErro } from '@/lib/supabase'
 import { brl } from '@/lib/utils'
 import { STATUS_VENDA_OPCOES, diaBR, somarDiasUteis } from '@/lib/negocio'
@@ -32,7 +32,7 @@ function useAcaoVenda<T>(fn: (v: T) => Promise<unknown>, ok: string) {
 }
 
 /**
- * Depois do Verdinho (contratos do Luis): Pix do indicador em até 5 dias úteis, estorno, comissões recorrentes
+ * Depois do Verdinho (contratos do Luis): Pix do indicador em até 5 dias úteis, comissões recorrentes
  * (50% do líquido para a Geralindica) e troca de plano em até 10 anos.
  */
 export function PosVenda({ venda, trocas, recebimentos }: { venda: Venda; trocas: Venda[]; recebimentos: Recebimento[] }) {
@@ -43,10 +43,6 @@ export function PosVenda({ venda, trocas, recebimentos }: { venda: Venda; trocas
     const { error } = await supabase.rpc('marcar_indicador_pago', { p_venda: venda.id, p_pago: pago })
     if (error) throw error
   }, 'Pagamento do indicador atualizado.')
-  const estornar = useAcaoVenda(async () => {
-    const { error } = await supabase.rpc('estornar_venda', { p_venda: venda.id })
-    if (error) throw error
-  }, 'Venda estornada. Avise o indicador e a Geralindica pelo chat.')
   const addRec = useAcaoVenda(async () => {
     const { error } = await supabase.rpc('registrar_recebimento', { p_venda: venda.id, p_valor: numero(novoRec!.valor), p_data: novoRec!.data, p_descricao: novoRec!.desc || null })
     if (error) throw error
@@ -86,9 +82,7 @@ export function PosVenda({ venda, trocas, recebimentos }: { venda: Venda; trocas
             <Wallet size={16} />
             Pix ao indicador
           </span>
-          {!venda.indicacao_valida ? (
-            <span className="text-[13px] text-ink-600">Fechada depois de 90 dias do registro do lead: sem parte do indicador (cláusula 4.1).</span>
-          ) : venda.indicador_pago_em ? (
+          {venda.indicador_pago_em ? (
             <div className="flex items-center gap-2 text-[13px]">
               <span className="font-bold text-verde-700">Pago em {diaBR(venda.indicador_pago_em)}</span>
               <button type="button" onClick={() => pagar.mutate(false)} className="cursor-pointer font-bold text-ink-400 hover:text-vermelho-fg">
@@ -103,9 +97,6 @@ export function PosVenda({ venda, trocas, recebimentos }: { venda: Venda; trocas
                 Já paguei
               </Button>
             </div>
-          )}
-          {venda.status === 'estornado' && venda.indicador_pago_em && venda.indicacao_valida && (
-            <span className="text-[12px] font-semibold text-ambar-fg">Estornada: o indicador devolve a parte dele em até 3 dias úteis (cláusula 5.1).</span>
           )}
         </div>
       )}
@@ -155,7 +146,7 @@ export function PosVenda({ venda, trocas, recebimentos }: { venda: Venda; trocas
         </div>
       )}
 
-      {(aprovada || venda.status === 'estornado') && (
+      {aprovada && (
         <div className="flex flex-col gap-2 border-t border-ink-100 pt-3">
           <span className="flex items-center gap-1.5 text-[14px] font-extrabold">
             <Repeat size={16} />
@@ -225,12 +216,6 @@ export function PosVenda({ venda, trocas, recebimentos }: { venda: Venda; trocas
         </div>
       )}
 
-      {aprovada && (
-        <button type="button" onClick={() => window.confirm('Marcar esta venda como estornada? (cliente cancelou, desistiu ou a operadora estornou)') && estornar.mutate(undefined)} className="flex cursor-pointer items-center gap-1.5 self-start border-t border-ink-100 pt-3 text-[13px] font-bold text-ink-400 hover:text-vermelho-fg">
-          <Ban size={15} />
-          Cliente cancelou / operadora estornou
-        </button>
-      )}
     </Card>
   )
 }

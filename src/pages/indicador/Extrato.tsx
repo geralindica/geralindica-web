@@ -12,7 +12,6 @@ const FILTROS: { k: string; label: string; st: StatusVenda | null }[] = [
   { k: 'aprovado', label: 'Verdinho', st: 'aprovado' },
   { k: 'aguardando', label: 'Aguardando entrevista', st: 'aguardando_entrevista' },
   { k: 'reprovado', label: 'Reprovadas', st: 'reprovado' },
-  { k: 'estornado', label: 'Estornadas', st: 'estornado' },
 ]
 
 export function Extrato() {
@@ -68,8 +67,8 @@ function RelatorioMensal() {
   return (
     <Card className="overflow-x-auto p-4">
       <div className="mb-1 text-[16px] font-extrabold">Relatório mensal das indicações</div>
-      <div className="mb-3 text-[12px] text-ink-600">Pelo mês em que o contato chegou. Depois de 90 dias sem fechar, a indicação expira (cláusula 4.1).</div>
-      <table className="w-full min-w-[520px] text-[13px]">
+      <div className="mb-3 text-[12px] text-ink-600">Pelo mês em que o contato chegou.</div>
+      <table className="w-full min-w-[440px] text-[13px]">
         <thead>
           <tr className="text-ink-600">
             <th className="pb-2 text-left font-bold">Mês</th>
@@ -77,7 +76,6 @@ function RelatorioMensal() {
             <th className="pb-2 text-right font-bold">Em atendimento</th>
             <th className="pb-2 text-right font-bold">Convertidas</th>
             <th className="pb-2 text-right font-bold">Canceladas</th>
-            <th className="pb-2 text-right font-bold">Expiradas</th>
           </tr>
         </thead>
         <tbody>
@@ -88,7 +86,6 @@ function RelatorioMensal() {
               <td className={col}>{m.em_atendimento}</td>
               <td className={`${col} text-verde-700`}>{m.convertidas}</td>
               <td className={col}>{m.canceladas}</td>
-              <td className={`${col} text-ink-400`}>{m.expiradas}</td>
             </tr>
           ))}
         </tbody>

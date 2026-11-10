@@ -1,10 +1,11 @@
 // Contratos do Luis Novinho (recebidos em 07/11/2026), com os campos preenchidos pelo cadastro.
-// O texto é o dele: só foram corrigidos erros de digitação. Mudou o texto? Suba VERSAO_TEXTO; quem já assinou
+// O texto é o dele: só foram corrigidos erros de digitação. Versão 2 (10/11/2026, pedido do Eduardo): sem telefone
+// e e-mail das partes (o chat proíbe trocar esses dados), lead sem prazo de validade (4.1) e sem estorno (5.1). Mudou o texto? Suba VERSAO_TEXTO; quem já assinou
 // continua na versão que assinou (o PDF assinado fica guardado no bucket "contratos").
 // O PDF é gerado no navegador (jsPDF, carregado só na hora) e assinado no assinador.iti.br.
 import type { DadosContrato, ParteContrato } from './types'
 
-export const VERSAO_TEXTO = '1 · 08/11/2026'
+export const VERSAO_TEXTO = '2 · 10/11/2026'
 export const FORO = 'Rio de Janeiro/RJ'
 export const ASSINADOR_GOVBR = 'https://assinador.iti.br'
 const GERALINDICA =
@@ -16,9 +17,10 @@ const vazio = '________________'
 const val = (v: string | null | undefined) => (v && v.trim() ? v.trim() : vazio)
 const rotuloDoc = (p: ParteContrato) => (p.tipo_pessoa === 'PJ' ? 'CNPJ' : 'CPF')
 
+// Sem telefone e e-mail: pelo contrato (6.4), as partes só se falam pelo chat do site.
 function qualificacao(p: ParteContrato, final: string, residente = false) {
   const rg = p.tipo_pessoa === 'PJ' && !p.rg ? '' : `, portador(a) do RG nº ${val(p.rg)}`
-  return `${val(p.nome)}, inscrito(a) no ${rotuloDoc(p)} sob o nº ${val(p.documento)}${residente ? `${rg}, residente e domiciliado(a) em ${val(p.endereco)}` : `, com domicílio/sede em ${val(p.endereco)}${rg}`}, e-mail ${val(p.email)} e telefone ${val(p.telefone)}, doravante denominado(a) ${final}.`
+  return `${val(p.nome)}, inscrito(a) no ${rotuloDoc(p)} sob o nº ${val(p.documento)}${residente ? `${rg}, residente e domiciliado(a) em ${val(p.endereco)}` : `, com domicílio/sede em ${val(p.endereco)}${rg}`}, doravante denominado(a) ${final}.`
 }
 
 const dataExtenso = (d = new Date()) => d.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -50,11 +52,10 @@ export function blocosIndicador(d: DadosContrato): Bloco[] {
     { t: 'p', texto: '3.4. O pagamento ocorrerá em até 5 (cinco) dias úteis após o(a) consultor(a) obter a compensação efetiva do recebimento da sua comissão e constatação da efetividade do plano de saúde pelo cliente, mediante transferência bancária para a conta indicada pelo(a) PARCEIRO(A) que vai realizar o marketing de indicações.' },
     { t: 'p', texto: '3.5. O consultor ou consultora apresentará ao(à) PARCEIRO(A) que vai realizar o marketing de indicações os valores das comissões de cada plano vendido e gerará uma planilha com os valores gerados, preservando estritamente os dados pessoais dos contratantes em conformidade com a Lei Geral de Proteção de Dados (LGPD - Lei nº 13.709/2018).' },
     { t: 'clausula', texto: 'CLÁUSULA QUARTA – DA DEFINIÇÃO DE "LEAD VÁLIDO" E REGRAS DE CADASTRO' },
-    { t: 'p', texto: '4.1. Para os fins deste contrato, considera-se "Lead Válido" o contato de potencial cliente que preencha cumulativamente os seguintes requisitos:' },
-    { t: 'item', texto: 'a) Realize a contratação e o fechamento do plano de saúde no prazo máximo de até 90 (noventa) dias contados a partir da data do primeiro contato ou registro da indicação gerada pelo link/QR code. Após este prazo, a indicação perderá a validade para fins de comissionamento.' },
-    { t: 'clausula', texto: 'CLÁUSULA QUINTA – DOS ESTORNOS, CANCELAMENTOS E ENCARGOS MORATÓRIOS' },
-    { t: 'p', texto: '5.1. Caso ocorra o distrato, cancelamento, desistência do cliente ou estorno da primeira parcela/taxa de adesão por parte da operadora de saúde, o valor correspondente deverá ser restituído pelo(a) PARCEIRO(A) ao consultor(a) do plano de saúde em até 3 (três) dias úteis contados da notificação, sem prejuízo da compensação em créditos futuros.' },
-    { t: 'p', texto: '5.2. Em caso de atraso injustificado no cumprimento de quaisquer obrigações de pagamento ou restituição previstas neste instrumento por qualquer das partes, incidirão sobre o valor devido multa moratória de 2% (dois por cento) e juros de mora de 1% (um por cento) ao mês, calculados pro rata die até a data do efetivo pagamento, valendo esta regra de forma equânime para ambos os contratantes.' },
+    { t: 'p', texto: '4.1. Para os fins deste contrato, considera-se "Lead Válido" o contato de potencial cliente gerado pelo link/QR code do(a) PARCEIRO(A) que realize a contratação e o fechamento do plano de saúde com o(a) consultor(a), a qualquer tempo, sem prazo de validade.' },
+    { t: 'clausula', texto: 'CLÁUSULA QUINTA – DA REPROVAÇÃO DO CLIENTE E DOS ENCARGOS MORATÓRIOS' },
+    { t: 'p', texto: '5.1. O valor pago pelo cliente fica com o(a) consultor(a) até a aprovação na entrevista de saúde. Caso o cliente seja reprovado, o(a) consultor(a) devolve 100% (cem por cento) do valor ao cliente e não há pagamento ao(à) PARCEIRO(A). O pagamento ao(à) PARCEIRO(A) só ocorre depois da aprovação e não está sujeito a restituição.' },
+    { t: 'p', texto: '5.2. Em caso de atraso injustificado no cumprimento de quaisquer obrigações de pagamento previstas neste instrumento por qualquer das partes, incidirão sobre o valor devido multa moratória de 2% (dois por cento) e juros de mora de 1% (um por cento) ao mês, calculados pro rata die até a data do efetivo pagamento, valendo esta regra de forma equânime para ambos os contratantes.' },
     { t: 'p', texto: '5.3. Na hipótese de o atendimento e fechamento do contrato serem realizados por um consultor parceiro, será de inteira e exclusiva responsabilidade do referido consultor parceiro efetuar o pagamento da respectiva participação financeira sobre o lucro da primeira mensalidade ou taxa de adesão diretamente ao(à) PARCEIRO(A) ou à pessoa ou à empresa que realizou a indicação do cliente que contratou os serviços dos planos de saúde, desobrigando integralmente o site pelo pagamento do marketing de indicações sobre esta parcela de indicações de clientes especificada no contrato, tendo em vista que a plataforma tem como papel desenvolver um meio de comunicação entre o consultor de plano de saúde e a empresa ou pessoa que vai realizar o marketing de indicações dos clientes que podem vir a contratar o plano de saúde.' },
     { t: 'clausula', texto: 'CLÁUSULA SEXTA – DA ATUAÇÃO DE CONSULTORES PARCEIROS E FLUXO DE COMUNICAÇÃO' },
     { t: 'p', texto: '6.1. Os leads direcionados pelo(a) PARCEIRO(A) serão atendidos por um(a) consultor(a) de planos de saúde parceiro(a) que integra o projeto conjuntamente.' },
@@ -243,7 +244,6 @@ export function camposFaltando(p: ParteContrato, comRg = true) {
   if (!p.documento?.trim()) f.push(p.tipo_pessoa === 'PJ' ? 'CNPJ' : 'CPF')
   if (comRg && p.tipo_pessoa !== 'PJ' && !p.rg?.trim()) f.push('RG')
   if (!p.endereco?.trim()) f.push('endereço')
-  if (!p.telefone?.trim()) f.push('telefone')
   return f
 }
 

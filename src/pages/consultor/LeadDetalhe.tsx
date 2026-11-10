@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, CheckCircle2, Eye, EyeOff, Handshake, Loader2, MessageCircle, MessagesSquare, StickyNote, TriangleAlert, User, type LucideIcon } from 'lucide-react'
 import { supabase, mensagemErro } from '@/lib/supabase'
 import { brl } from '@/lib/utils'
-import { ETAPAS, STATUS_VENDA_OPCOES, aliquotaDoConsultor, calcularSplit, validadeLead, corEtapa, dataBR, dataHoraBR, iniciais, mascararCPFCompleto, mascararTelefoneCompleto, nomeEtapa, primeiroNome } from '@/lib/negocio'
+import { ETAPAS, STATUS_VENDA_OPCOES, aliquotaDoConsultor, calcularSplit, corEtapa, dataBR, dataHoraBR, iniciais, mascararCPFCompleto, mascararTelefoneCompleto, nomeEtapa, primeiroNome } from '@/lib/negocio'
 import type { Etapa, LeadComOrigem, LeadEvento, StatusVenda, Venda } from '@/lib/types'
 import { linkWhatsApp, numeroInternacional } from '@/integrations'
 import { Button } from '@/components/ui/button'
@@ -220,7 +220,7 @@ export function LeadDetalhe() {
           </Card>
 
           <RegistrarVenda lead={lead} venda={q.data!.venda} />
-          {q.data!.venda && ['aprovado', 'estornado'].includes(q.data!.venda.status) && (
+          {q.data!.venda?.status === 'aprovado' && (
             <PosVenda venda={q.data!.venda} trocas={q.data!.trocas} recebimentos={q.data!.recebimentos.filter((r) => r.venda_id === q.data!.venda!.id)} />
           )}
 
@@ -282,10 +282,7 @@ function RegistrarVenda({ lead, venda }: { lead: LeadComOrigem; venda: Venda | n
   const bonifTexto = f.bonif.trim() === '' && f.status === 'aprovado' && cfg?.bonificacao_padrao != null ? String(cfg.bonificacao_padrao) : f.bonif
   const valorNum = Number(f.valor.replace(/\./g, '').replace(',', '.')) || 0
   const aliq = cfg ? aliquotaDoConsultor(cfg, perfil.tipo_pessoa, me.data?.faixa_pj ?? 1) : null
-  // Cláusula 4.1: fechou mais de 90 dias depois do registro do lead, a indicação perde a validade.
-  const validade = validadeLead(lead.created_at)
-  const valida = new Date(f.data + 'T12:00') <= validade
-  const previa = cfg ? calcularSplit(valorNum, aliq, cfg.pct_indicador, cfg.pct_consultor_restante, Number(bonifTexto.replace(',', '.')) || 0, valida) : null
+  const previa = cfg ? calcularSplit(valorNum, aliq, cfg.pct_indicador, cfg.pct_consultor_restante, Number(bonifTexto.replace(',', '.')) || 0) : null
   const salvar = useAcao(lead.id, async () => {
     const v = Number(f.valor.replace(/\./g, '').replace(',', '.'))
     const { error } = await supabase.rpc('registrar_venda', {
@@ -313,26 +310,16 @@ function RegistrarVenda({ lead, venda }: { lead: LeadComOrigem; venda: Venda | n
         <>
           <div className="text-[13px] leading-[1.5] text-ink-600">
             {venda.cliente} · {brl(venda.valor_adesao)} · {dataBR(venda.data_venda + 'T12:00')}
-            {!venda.indicacao_valida && venda.indicador_id && ' · sem parte do indicador (fechada depois de 90 dias)'}
           </div>
-          {venda.status !== 'estornado' && (
-            <Button variant="outline" size="sm" className="h-[42px]" onClick={() => setAberto(true)}>
-              Atualizar venda
-            </Button>
-          )}
-        </>
-      ) : !aberto ? (
-        <>
-          {lead.canal && (
-            <div className="text-[12px] text-ink-600">
-              Indicação válida até <b>{validade.toLocaleDateString('pt-BR')}</b> (90 dias do registro, cláusula 4.1).
-            </div>
-          )}
-          <Button variant="primary" size="sm" className="h-[42px] font-extrabold" onClick={() => setAberto(true)}>
-            <Handshake size={18} />
-            Registrar venda
+          <Button variant="outline" size="sm" className="h-[42px]" onClick={() => setAberto(true)}>
+            Atualizar venda
           </Button>
         </>
+      ) : !aberto ? (
+        <Button variant="primary" size="sm" className="h-[42px] font-extrabold" onClick={() => setAberto(true)}>
+          <Handshake size={18} />
+          Registrar venda
+        </Button>
       ) : (
         <form
           className="flex flex-col gap-3"
@@ -377,11 +364,6 @@ function RegistrarVenda({ lead, venda }: { lead: LeadComOrigem; venda: Venda | n
               placeholder={cfg?.bonificacao_padrao != null ? `${String(cfg.bonificacao_padrao).replace('.', ',')} (sugerida)` : ''}
               onChange={(e) => setF({ ...f, bonif: e.target.value.replace(/[^\d,.]/g, '') })}
             />
-          )}
-          {f.codigo.trim() && !valida && (
-            <div className="rounded-[12px] bg-ambar-bg px-3 py-2.5 text-[12px] font-semibold leading-[1.45] text-ambar-fg">
-              Esta data passa de {validade.toLocaleDateString('pt-BR')} (90 dias do registro do lead). Pela cláusula 4.1, a indicação perdeu a validade: não há parte do indicador.
-            </div>
           )}
           {previa && valorNum > 0 && f.status !== 'reprovado' && (
             <div className="flex flex-col gap-1 rounded-[12px] bg-ink-50 px-3 py-2.5 text-[13px]">

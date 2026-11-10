@@ -186,7 +186,7 @@ export function Cadastro() {
                 <button type="button" role="radio" aria-checked={isInd} onClick={() => setRole('ind')} className={cn(roleCard, isInd ? 'border-verde-600 bg-verde-50' : 'border-ink-200 bg-white')}>
                   <QrCode size={30} className="text-verde-700" />
                   <span className="text-[19px] font-extrabold">Indicador</span>
-                  <span className="text-[14px] leading-[1.5] text-ink-600">Espalho QR Codes e ganho 50% do lucro líquido de cada adesão aprovada.</span>
+                  <span className="text-[14px] leading-[1.5] text-ink-600">Faço o marketing com QR Codes e ganho a cada cliente que fecha e é aprovado.</span>
                 </button>
                 <button type="button" role="radio" aria-checked={!isInd} onClick={() => setRole('con')} className={cn(roleCard, !isInd ? 'border-ink-950 bg-ink-50' : 'border-ink-200 bg-white')}>
                   <Headset size={30} className="text-ink-950" />
@@ -327,13 +327,13 @@ export function Cadastro() {
                 <ul className="m-0 pl-5 text-[14px] leading-[1.7] text-ink-800">
                   {(isInd
                     ? [
-                        '50% do lucro líquido da primeira parcela de cada cliente aprovado, pago pelo consultor em até 5 dias úteis.',
-                        'A indicação vale por 90 dias; se o cliente trocar de plano em até 10 anos, você recebe de novo.',
-                        'Estorno: você devolve ao consultor em até 3 dias úteis.',
+                        'Pagamento pelo seu marketing: você divide meio a meio com o consultor o resultado de cada cliente seu, pago em até 5 dias úteis.',
+                        'Sem prazo: o cliente fechou, você recebe. Se ele trocar de plano em até 10 anos, você recebe de novo.',
+                        'Cliente reprovado na entrevista: o consultor devolve o valor a ele e ninguém recebe.',
                         'Chat com o consultor monitorado por robô: sem telefone, e-mail, redes sociais ou profissão.',
                       ]
                     : [
-                        'Pagar 50% do lucro líquido de cada venda ao indicador e dividir o restante (com a bonificação) meio a meio com a Geralindica.',
+                        'Pagar o marketing do indicador (metade do seu resultado líquido com cada cliente dele) e dividir o restante, com a bonificação, meio a meio com a Geralindica.',
                         'Parte da Geralindica até o dia 5 do mês seguinte, com juros de 1% ao dia de atraso.',
                         'Trocas de plano em até 10 anos e comissões recorrentes também entram na divisão.',
                         'Enviar o comprovante de habilitação ou vínculo com corretora; chat com indicadores monitorado por robô.',

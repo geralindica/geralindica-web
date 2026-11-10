@@ -9,7 +9,7 @@ import { CheckCircleFilled } from '@/components/icons'
 import { faqs } from '@/data/conteudo'
 import { brl } from '@/lib/utils'
 import { useConfig } from '@/data/queries'
-import { calcularSplit, pct } from '@/lib/negocio'
+import { calcularSplit } from '@/lib/negocio'
 
 const h2 = 'm-0 text-[34px] font-extrabold leading-[1.05] tracking-[-0.04em] sm:text-[44px]'
 
@@ -19,13 +19,13 @@ function Hero() {
       <div className="flex flex-col gap-7">
         <span className="inline-flex items-center gap-2 self-start rounded-full border border-ink-200 bg-white py-1.5 pl-2 pr-[14px] text-[13px] font-bold">
           <span className="rounded-full bg-verde-600 px-2 py-0.5 text-[11px] text-white">NOVO</span>
-          Indicações de plano de saúde com comissão rastreada
+          Marketing de indicação com ganho rastreado
         </span>
         <h1 className="m-0 text-balance text-[clamp(44px,6vw,72px)] font-extrabold leading-none tracking-[-0.05em]">
           Indique planos de saúde. Receba <span className="text-verde-600">no verdinho.</span>
         </h1>
         <p className="m-0 max-w-[520px] text-pretty text-[19px] leading-[1.55] text-ink-600">
-          Espalhe seu QR Code no carro, na loja ou no Instagram. O cliente chama o seu consultor no WhatsApp, ele faz todo o atendimento e, com a adesão aprovada, manda a sua parte por Pix.
+          Espalhe seu QR Code no carro, na loja ou no Instagram. O cliente chama o seu consultor no WhatsApp, ele faz todo o atendimento e, com o cliente aprovado, paga o seu marketing por Pix.
         </p>
         <div className="grid max-w-[560px] grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3">
           <Link
@@ -54,7 +54,7 @@ function Hero() {
         />
         <div className="absolute bottom-10 left-[-12px] flex min-w-[230px] flex-col gap-2 rounded-[18px] bg-white px-[18px] py-4 shadow-float sm:left-[-20px]">
           <div className="flex items-center justify-between gap-3">
-            <span className="text-[13px] font-semibold text-ink-600">Comissão · Ana</span>
+            <span className="text-[13px] font-semibold text-ink-600">Marketing · Ana</span>
             <VerdinhoBadge />
           </div>
           <div className="text-[30px] font-extrabold tracking-[-0.03em]">+ R$ 362,50</div>
@@ -102,9 +102,9 @@ function ComoFunciona() {
               </span>
               <span className="text-[48px] font-extrabold tracking-[-0.04em] text-white/30">03</span>
             </div>
-            <div className="text-[22px] font-extrabold tracking-[-0.02em]">Comissão no verdinho</div>
+            <div className="text-[22px] font-extrabold tracking-[-0.02em]">Pagamento no verdinho</div>
             <p className="m-0 text-[15px] leading-[1.55] text-verde-100">
-              Entrevista de saúde aprovada: o consultor registra a venda, o status vira Verdinho ✓ e ele manda a sua parte por Pix.
+              Entrevista de saúde aprovada: o consultor registra o cliente, o status vira Verdinho ✓ e ele paga o seu marketing por Pix.
             </p>
           </div>
         </div>
@@ -119,7 +119,8 @@ function Simulador() {
   const [n, setN] = useState(5)
   const [ticket, setTicket] = useState(1000)
   const cfg = useConfig()
-  const per = cfg.data ? calcularSplit(ticket, cfg.data.aliquota_pf, cfg.data.pct_indicador, cfg.data.pct_consultor_restante).indicador : 0
+  const ganho = (t: number) => (cfg.data ? calcularSplit(t, cfg.data.aliquota_pf, cfg.data.pct_indicador, cfg.data.pct_consultor_restante).indicador : 0)
+  const per = ganho(ticket)
   const semImposto = !!cfg.data && cfg.data.aliquota_pf == null
 
   return (
@@ -141,11 +142,11 @@ function Simulador() {
           <input id="sim-n" type="range" min={1} max={20} value={n} onChange={(e) => setN(+e.target.value)} className="w-full" />
         </div>
         <div className="flex flex-col gap-3">
-          <span className="text-[15px] font-bold">Valor médio da adesão</span>
+          <span className="text-[15px] font-bold">Ganho médio por cliente</span>
           <div className="flex flex-wrap gap-2">
             {tickets.map((t) => (
               <Chip key={t} active={ticket === t} onClick={() => setTicket(t)} className="rounded-[12px] px-4 py-[10px] text-[15px]">
-                {brl(t).replace(',00', '')}
+                {cfg.data ? brl(ganho(t)) : '—'}
               </Chip>
             ))}
           </div>
@@ -156,7 +157,7 @@ function Simulador() {
             {cfg.data ? brl(per * n) : '—'}
             <span className="text-[18px] tracking-normal opacity-60"> /mês</span>
           </span>
-          <span className="text-[13px] text-ink-400">{cfg.data ? `${brl(per)} por adesão aprovada` : 'Simulação indisponível no momento'}</span>
+          <span className="text-[13px] text-ink-400">{cfg.data ? `${brl(per)} por cliente aprovado` : 'Simulação indisponível no momento'}</span>
         </div>
       </div>
     </section>
@@ -172,25 +173,17 @@ function Split() {
     <section className="bg-ink-950 text-white">
       <div className="mx-auto grid max-w-[1200px] grid-cols-[repeat(auto-fit,minmax(min(100%,420px),1fr))] items-center gap-14 px-7 py-[88px]">
         <div className="flex flex-col gap-4">
-          <Eyebrow className="text-verde-300">Transparência do split</Eyebrow>
-          <h2 className={h2}>Metade do lucro líquido é sua. Sem letra miúda.</h2>
+          <Eyebrow className="text-verde-300">Seu marketing tem valor</Eyebrow>
+          <h2 className={h2}>Você e o consultor dividem o resultado. Sem letra miúda.</h2>
           <p className="m-0 text-[17px] leading-[1.6] text-ink-300">
-            Do valor da adesão sai o imposto do consultor. Do que sobra, {c ? pct(c.pct_indicador) : 'metade'} é seu. Quem paga é o consultor, por Pix, depois da entrevista de saúde aprovada. A Geralindica não segura o seu dinheiro: você acompanha cada venda no painel.
+            Você faz o marketing: espalha seu QR Code e traz o cliente. O consultor faz o atendimento. O resultado que ele tem com cada cliente seu, já sem os impostos, é dividido meio a meio entre vocês dois. Quem paga é o consultor, por
+            Pix, depois da entrevista de saúde aprovada. A Geralindica não segura o seu dinheiro: você acompanha cada cliente no painel.
           </p>
         </div>
         <div className="flex flex-col gap-[14px] rounded-[24px] bg-white p-7 text-ink-950">
-          <span className="text-[18px] font-extrabold">Exemplo de adesão</span>
-          <div className="flex justify-between text-[15px]">
-            <span className="text-ink-600">Valor da adesão</span>
-            <span className="font-bold">{brl(1000)}</span>
-          </div>
-          <div className="flex justify-between text-[15px]">
-            <span className="text-ink-600">{!c ? 'Imposto' : c.aliquota_pf == null ? 'Imposto (a definir)' : `Imposto (${pct(c.aliquota_pf)}, consultor PF)`}</span>
-            <span className="font-bold text-vermelho-fg">− {v(r?.imposto)}</span>
-          </div>
-          <div className="border-t border-dashed border-ink-200" />
+          <span className="text-[18px] font-extrabold">Exemplo de um cliente aprovado</span>
           <div className="flex justify-between text-[16px]">
-            <span className="font-bold">Valor líquido</span>
+            <span className="font-bold">Resultado do consultor, sem impostos</span>
             <span className="font-extrabold">{v(r?.liquido)}</span>
           </div>
           <div className="my-1.5 flex h-3 gap-[3px] overflow-hidden rounded-full">
@@ -199,14 +192,15 @@ function Split() {
           </div>
           <div className="grid grid-cols-2 gap-[10px]">
             <div className="rounded-[14px] bg-verde-50 p-[14px]">
-              <div className="text-[12px] font-bold text-verde-700">{c ? pct(c.pct_indicador) : ''} Indicador</div>
+              <div className="text-[12px] font-bold text-verde-700">Seu marketing</div>
               <div className="text-[20px] font-extrabold text-verde-900 sm:text-[24px]">{v(r?.indicador)}</div>
             </div>
             <div className="rounded-[14px] bg-ink-50 p-[14px]">
-              <div className="text-[12px] font-bold text-ink-600">Consultor + Geralindica</div>
+              <div className="text-[12px] font-bold text-ink-600">Consultor</div>
               <div className="text-[20px] font-extrabold sm:text-[24px]">{v(r?.consultorAdesao)}</div>
             </div>
           </div>
+          <span className="text-[12px] text-ink-400">Valores ilustrativos.</span>
         </div>
       </div>
     </section>

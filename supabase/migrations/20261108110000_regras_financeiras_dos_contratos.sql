@@ -1,46 +1,22 @@
 -- Regras de dinheiro dos contratos do Luis (08/11/2026). A plataforma continua sem movimentar dinheiro:
 -- só registra e mostra o que cada um deve pagar por fora.
--- • Lead válido por 90 dias (indicador 4.1): venda fechada depois disso não gera parte do indicador.
--- • Estorno (indicador 5.1, consultor 5.1–5.3): venda aprovada pode virar "estornada"; o indicador devolve em
---   3 dias úteis e a Geralindica devolve/compensa no fechamento.
+-- • Sem prazo de validade do lead e sem estorno (decisão do Eduardo, 10/11/2026): o dinheiro fica com o consultor
+--   até o Verdinho; reprovado, ele devolve ao cliente e ninguém recebe. Depois do Verdinho não há volta.
 -- • Troca de plano em até 10 anos (consultor 3.5): o cliente troca de plano, o consultor paga de novo indicador e site.
 -- • Comissões recorrentes e bonificações seguintes (consultor 4.2 b): 50% do lucro líquido para a Geralindica.
 -- • Fechamento mensal com a Geralindica até o dia 5 do mês seguinte, juros de 1% ao dia (consultor 3.3 e 4.4).
 -- • Relatório mensal ao indicador (indicador 8.1).
 
-alter table public.vendas drop constraint vendas_status_check;
-alter table public.vendas add constraint vendas_status_check check (status in ('aguardando_entrevista','aprovado','reprovado','estornado'));
 alter table public.vendas drop constraint vendas_lead_id_key;
 alter table public.vendas
   add column tipo text not null default 'nova' check (tipo in ('nova','troca_plano')),
   add column venda_origem uuid references public.vendas(id) on delete cascade,
-  add column indicacao_valida boolean not null default true,
   add column aprovado_em timestamptz,
-  add column estornado_em timestamptz,
   add column indicador_pago_em date;
 alter table public.vendas add constraint vendas_troca_tem_origem check ((tipo = 'troca_plano') = (venda_origem is not null));
 create unique index vendas_uma_nova_por_lead on public.vendas (lead_id) where tipo = 'nova';
 create index vendas_origem_idx on public.vendas (venda_origem);
-comment on column public.vendas.indicacao_valida is 'false quando a venda foi fechada mais de 90 dias depois do registro do lead (cláusula 4.1): sem parte do indicador.';
 comment on column public.vendas.aprovado_em is 'Quando virou Verdinho. Define o mês do fechamento com a Geralindica.';
-
--- Split: sem indicação válida, a parte do indicador fica no bolo do consultor com a Geralindica.
-drop function private.split_venda(numeric, numeric, numeric);
-create function private.split_venda(p_valor numeric, p_aliquota numeric, p_bonificacao numeric, p_com_indicador boolean default true)
- returns table(liquido numeric, indicador numeric, bonificacao numeric, consultor numeric, geralindica numeric)
- language sql stable security definer set search_path to 'public'
-as $function$
-  with c as (select pct_indicador, pct_consultor_restante from public.config_split where id = 1),
-  a as (
-    select c.*, round(p_valor * (1 - coalesce(p_aliquota, 0) / 100), 2) as liq,
-      round(p_valor * coalesce(p_bonificacao, 0) / 100 * (1 - coalesce(p_aliquota, 0) / 100), 2) as bon
-    from c
-  ),
-  b as (select a.*, case when coalesce(p_com_indicador, true) then round(liq * pct_indicador / 100, 2) else 0::numeric end as ind from a),
-  d as (select b.*, case when pct_consultor_restante is null then null
-                    else round((liq - ind + bon) * pct_consultor_restante / 100, 2) end as con from b)
-  select liq, ind, bon, con, (liq - ind + bon) - con from d;
-$function$;
 
 -- Parte da Geralindica num recebimento recorrente: 50% do líquido (sem indicador, que só ganha na 1ª parcela).
 create function private.geralindica_recebimento(p_valor numeric, p_aliquota numeric) returns numeric
@@ -85,7 +61,7 @@ $function$;
 create or replace function public.registrar_venda(p_lead uuid, p_cliente text, p_codigo text, p_valor numeric, p_data date, p_status text, p_bonificacao numeric default null)
  returns uuid language plpgsql security definer set search_path to 'public'
 as $function$
-declare v_lead public.leads; v_canal public.canais; v_id uuid; v_bonif numeric := p_bonificacao; v_valida boolean;
+declare v_lead public.leads; v_canal public.canais; v_id uuid; v_bonif numeric := p_bonificacao;
   v_aliq numeric := coalesce(private.aliquota_consultor(auth.uid()), 0);
 begin
   select * into v_lead from public.leads where id = p_lead and consultor_id = auth.uid() for update;
@@ -104,18 +80,15 @@ begin
       raise exception 'Este código é de um indicador de outro consultor' using errcode = 'P0001';
     end if;
   end if;
-  -- Cláusula 4.1: o lead vale por 90 dias contados do registro da indicação.
-  v_valida := p_data <= (v_lead.created_at at time zone 'America/Sao_Paulo')::date + 90;
-
   insert into public.vendas (consultor_id, lead_id, indicador_id, canal_id, cliente, valor_adesao, data_venda, status, aliquota, bonificacao_pct,
-    indicacao_valida, aprovado_em)
+    aprovado_em)
   values (auth.uid(), p_lead, v_canal.indicador_id, v_canal.id, left(split_part(trim(p_cliente), ' ', 1), 60), p_valor, p_data, p_status, v_aliq, v_bonif,
-    v_valida, case when p_status = 'aprovado' then now() end)
+    case when p_status = 'aprovado' then now() end)
   on conflict (lead_id) where tipo = 'nova' do update set indicador_id = excluded.indicador_id, canal_id = excluded.canal_id, cliente = excluded.cliente,
     valor_adesao = excluded.valor_adesao, data_venda = excluded.data_venda, status = excluded.status,
-    aliquota = excluded.aliquota, bonificacao_pct = excluded.bonificacao_pct, indicacao_valida = excluded.indicacao_valida,
+    aliquota = excluded.aliquota, bonificacao_pct = excluded.bonificacao_pct,
     aprovado_em = case when excluded.status = 'aprovado' then coalesce(public.vendas.aprovado_em, now()) end,
-    estornado_em = null, updated_at = now()
+    updated_at = now()
   returning id into v_id;
 
   update public.leads set
@@ -123,8 +96,7 @@ begin
     etapa = case p_status when 'aprovado' then 'aprovado' when 'reprovado' then 'reprovado' else 'entrevista' end
   where id = p_lead;
   insert into public.lead_eventos (lead_id, tipo, texto) values (p_lead, 'consultor',
-    'Venda registrada: ' || case p_status when 'aprovado' then 'aprovada no Verdinho' when 'reprovado' then 'reprovada e devolvida ao cliente' else 'aguardando entrevista' end
-    || case when not v_valida and v_canal.id is not null then ' · fechada depois de 90 dias: sem parte do indicador' else '' end);
+    'Venda registrada: ' || case p_status when 'aprovado' then 'aprovada no Verdinho' when 'reprovado' then 'reprovada e devolvida ao cliente' else 'aguardando entrevista' end);
   perform private.recalc_consultor(auth.uid());
   return v_id;
 end $function$;
@@ -137,7 +109,7 @@ begin
   select * into o from public.vendas where id = p_venda_origem and consultor_id = auth.uid();
   if not found then raise exception 'Venda não encontrada' using errcode = 'P0001'; end if;
   if o.tipo = 'troca_plano' then select * into o from public.vendas where id = o.venda_origem; end if;
-  if o.status not in ('aprovado', 'estornado') then raise exception 'Só dá para registrar troca de plano de uma venda aprovada' using errcode = 'P0001'; end if;
+  if o.status <> 'aprovado' then raise exception 'Só dá para registrar troca de plano de uma venda aprovada' using errcode = 'P0001'; end if;
   if p_status not in ('aguardando_entrevista','aprovado','reprovado') then raise exception 'Status inválido' using errcode = 'P0001'; end if;
   if p_valor is null or p_valor <= 0 then raise exception 'Informe o valor da adesão' using errcode = 'P0001'; end if;
   if p_data is null or p_data > current_date + 1 then raise exception 'Informe a data da troca (não pode ser no futuro)' using errcode = 'P0001'; end if;
@@ -147,9 +119,9 @@ begin
   if v_bonif is not null and (v_bonif < 0 or v_bonif > 1000) then raise exception 'A bonificação vai de 0 a 1000%%' using errcode = 'P0001'; end if;
 
   insert into public.vendas (consultor_id, lead_id, indicador_id, canal_id, cliente, valor_adesao, data_venda, status, aliquota, bonificacao_pct,
-    tipo, venda_origem, indicacao_valida, aprovado_em)
+    tipo, venda_origem, aprovado_em)
   values (auth.uid(), o.lead_id, o.indicador_id, o.canal_id, o.cliente, p_valor, p_data, p_status, coalesce(private.aliquota_consultor(auth.uid()), 0), v_bonif,
-    'troca_plano', o.id, true, case when p_status = 'aprovado' then now() end)
+    'troca_plano', o.id, case when p_status = 'aprovado' then now() end)
   returning id into v_id;
   if o.lead_id is not null then
     insert into public.lead_eventos (lead_id, tipo, texto) values (o.lead_id, 'consultor', 'Troca de plano registrada (cláusula de 10 anos)');
@@ -167,26 +139,9 @@ begin
   if p_status not in ('aguardando_entrevista','aprovado','reprovado') then raise exception 'Status inválido' using errcode = 'P0001'; end if;
   if p_status = 'aprovado' and v_bonif is null then v_bonif := coalesce(v.bonificacao_pct, (select bonificacao_padrao from public.config_split where id = 1)); end if;
   if v_bonif is not null and (v_bonif < 0 or v_bonif > 1000) then raise exception 'A bonificação vai de 0 a 1000%%' using errcode = 'P0001'; end if;
-  update public.vendas set status = p_status, bonificacao_pct = v_bonif, estornado_em = null, updated_at = now(),
+  update public.vendas set status = p_status, bonificacao_pct = v_bonif, updated_at = now(),
     aprovado_em = case when p_status = 'aprovado' then coalesce(aprovado_em, now()) end
   where id = v.id;
-end $$;
-
--- Estorno depois do Verdinho (cancelamento, desistência ou estorno da operadora).
-create function public.estornar_venda(p_venda uuid) returns void
-language plpgsql security definer set search_path = public as $$
-declare v public.vendas;
-begin
-  select * into v from public.vendas where id = p_venda and consultor_id = auth.uid() for update;
-  if not found then raise exception 'Venda não encontrada' using errcode = 'P0001'; end if;
-  if v.status <> 'aprovado' then raise exception 'Só venda aprovada pode ser estornada' using errcode = 'P0001'; end if;
-  update public.vendas set status = 'estornado', estornado_em = now(), updated_at = now() where id = v.id;
-  if v.lead_id is not null then
-    if v.tipo = 'nova' then update public.leads set etapa = 'perdido' where id = v.lead_id; end if;
-    insert into public.lead_eventos (lead_id, tipo, texto) values (v.lead_id, 'consultor',
-      'Venda estornada (cancelamento ou estorno da operadora). Indicador devolve em até 3 dias úteis; a Geralindica devolve ou compensa no fechamento.');
-  end if;
-  perform private.recalc_consultor(auth.uid());
 end $$;
 
 -- O consultor marca que já fez o Pix do indicador (cláusula 3.4: até 5 dias úteis depois de receber).
@@ -194,7 +149,7 @@ create function public.marcar_indicador_pago(p_venda uuid, p_pago boolean) retur
 language plpgsql security definer set search_path = public as $$
 begin
   update public.vendas set indicador_pago_em = case when p_pago then private.hoje_br() end, updated_at = now()
-  where id = p_venda and consultor_id = auth.uid() and indicador_id is not null and status in ('aprovado', 'estornado');
+  where id = p_venda and consultor_id = auth.uid() and indicador_id is not null and status = 'aprovado';
   if not found then raise exception 'Venda não encontrada ou ainda não aprovada' using errcode = 'P0001'; end if;
 end $$;
 
@@ -254,7 +209,7 @@ create policy "fechamentos: consultor ou admin le" on public.fechamentos for sel
 revoke all on public.fechamentos from anon, authenticated;
 grant select on public.fechamentos to authenticated;
 
--- Mês = quando o consultor recebeu (Verdinho / recebimento). Estorno desconta no mês do estorno (compensação, 5.3).
+-- Mês = quando o consultor recebeu (Verdinho / recebimento).
 -- Vence no dia 5 do mês seguinte; atraso = 1% ao dia sobre o valor.
 create function public.fechamentos(p_consultor uuid default null)
 returns table (consultor_id uuid, consultor text, mes date, vencimento date, valor numeric, pago_em date, valor_pago numeric, dias_atraso int, juros numeric)
@@ -268,12 +223,8 @@ begin
   return query
   with mov as (
     select v.consultor_id c, date_trunc('month', v.aprovado_em at time zone 'America/Sao_Paulo')::date m, s.geralindica val
-    from public.vendas v cross join lateral private.split_venda(v.valor_adesao, v.aliquota, v.bonificacao_pct, v.indicacao_valida) s
-    where v.aprovado_em is not null and v.status in ('aprovado', 'estornado')
-    union all
-    select v.consultor_id, date_trunc('month', v.estornado_em at time zone 'America/Sao_Paulo')::date, -s.geralindica
-    from public.vendas v cross join lateral private.split_venda(v.valor_adesao, v.aliquota, v.bonificacao_pct, v.indicacao_valida) s
-    where v.status = 'estornado' and v.estornado_em is not null and v.aprovado_em is not null
+    from public.vendas v cross join lateral private.split_venda(v.valor_adesao, v.aliquota, v.bonificacao_pct) s
+    where v.aprovado_em is not null and v.status = 'aprovado'
     union all
     select r.consultor_id, date_trunc('month', r.recebido_em)::date, private.geralindica_recebimento(r.valor, r.aliquota)
     from public.venda_recebimentos r
@@ -307,13 +258,13 @@ end $$;
 drop function public.vendas_indicador();
 create function public.vendas_indicador()
 returns table (venda_id uuid, cliente text, data_venda date, canal text, consultor text, status text, valor_adesao numeric, estimativa numeric,
-  tipo text, indicacao_valida boolean, aprovado_em timestamptz, estornado_em timestamptz, indicador_pago_em date)
+  tipo text, aprovado_em timestamptz, indicador_pago_em date)
 language sql stable security definer set search_path = public as $$
   select v.id, v.cliente, v.data_venda, 'Canal ' || lpad(c.numero::text, 2, '0') || ' · ' || c.nome, k.nome_exibicao, v.status, v.valor_adesao,
-    case when v.status = 'reprovado' or not v.indicacao_valida then 0 else s.indicador end,
-    v.tipo, v.indicacao_valida, v.aprovado_em, v.estornado_em, v.indicador_pago_em
+    case when v.status = 'reprovado' then 0 else s.indicador end,
+    v.tipo, v.aprovado_em, v.indicador_pago_em
   from public.vendas v
-  cross join lateral private.split_venda(v.valor_adesao, v.aliquota, v.bonificacao_pct, v.indicacao_valida) s
+  cross join lateral private.split_venda(v.valor_adesao, v.aliquota, v.bonificacao_pct) s
   left join public.canais c on c.id = v.canal_id
   join public.consultores k on k.id = v.consultor_id
   where v.indicador_id = auth.uid()
@@ -322,14 +273,13 @@ $$;
 
 -- Relatório mensal (cláusula 8.1): status das indicações por mês de registro, sem dado de cliente.
 create function public.relatorio_indicador()
-returns table (mes date, pendentes bigint, em_atendimento bigint, convertidas bigint, canceladas bigint, expiradas bigint)
+returns table (mes date, pendentes bigint, em_atendimento bigint, convertidas bigint, canceladas bigint)
 language sql stable security definer set search_path = public as $$
   select date_trunc('month', l.created_at at time zone 'America/Sao_Paulo')::date,
-    count(*) filter (where l.etapa in ('novo','triagem') and l.created_at >= now() - interval '90 days'),
-    count(*) filter (where l.etapa in ('cotacao','negociacao','contrato','custodia','entrevista') and l.created_at >= now() - interval '90 days'),
+    count(*) filter (where l.etapa in ('novo','triagem')),
+    count(*) filter (where l.etapa in ('cotacao','negociacao','contrato','custodia','entrevista')),
     count(*) filter (where l.etapa = 'aprovado'),
-    count(*) filter (where l.etapa in ('reprovado','perdido')),
-    count(*) filter (where l.etapa not in ('aprovado','reprovado','perdido') and l.created_at < now() - interval '90 days')
+    count(*) filter (where l.etapa in ('reprovado','perdido'))
   from public.leads l where l.indicador_id = auth.uid()
   group by 1 order by 1 desc limit 24;
 $$;
@@ -342,8 +292,8 @@ language sql stable security definer set search_path = public as $$
     coalesce((select array_agg('CANAL ' || lpad(c.numero::text, 2, '0') order by c.numero) from public.canais c where c.indicador_id = i.id), '{}'),
     (select count(*) from public.leads l where l.indicador_id = i.id and l.consultor_id = auth.uid()),
     (select count(*) from public.vendas v where v.indicador_id = i.id and v.consultor_id = auth.uid() and v.status = 'aprovado'),
-    -- Ainda falta pagar: aprovadas, com indicação válida e sem o Pix marcado.
-    (select coalesce(sum(s.indicador), 0) from public.vendas v cross join lateral private.split_venda(v.valor_adesao, v.aliquota, v.bonificacao_pct, v.indicacao_valida) s
+    -- Ainda falta pagar: aprovadas e sem o Pix marcado.
+    (select coalesce(sum(s.indicador), 0) from public.vendas v cross join lateral private.split_venda(v.valor_adesao, v.aliquota, v.bonificacao_pct) s
        where v.indicador_id = i.id and v.consultor_id = auth.uid() and v.status = 'aprovado' and v.indicador_pago_em is null),
     i.consultor_desde
   from public.indicadores i join public.profiles p on p.id = i.id
@@ -354,18 +304,18 @@ $$;
 drop function public.admin_vendas();
 create function public.admin_vendas()
 returns table (id uuid, data_venda date, created_at timestamptz, cliente text, consultor text, indicador text, valor_adesao numeric, aliquota numeric,
-  bonificacao_pct numeric, estimativa_indicador numeric, estimativa_geralindica numeric, status text, tipo text, indicacao_valida boolean, indicador_pago_em date)
+  bonificacao_pct numeric, estimativa_indicador numeric, estimativa_geralindica numeric, status text, tipo text, indicador_pago_em date)
 language plpgsql stable security definer set search_path = public as $$
 begin
   if not private.is_admin() then raise exception 'Apenas admin'; end if;
   return query
   select v.id, v.data_venda, v.created_at, v.cliente, k.nome_exibicao, coalesce(p.nome, 'Sem indicador'), v.valor_adesao,
     v.aliquota, v.bonificacao_pct,
-    case when v.status in ('reprovado') or not v.indicacao_valida then 0::numeric else s.indicador end,
+    case when v.status = 'reprovado' then 0::numeric else s.indicador end,
     case when v.status = 'aprovado' then s.geralindica else 0::numeric end,
-    v.status, v.tipo, v.indicacao_valida, v.indicador_pago_em
+    v.status, v.tipo, v.indicador_pago_em
   from public.vendas v
-  cross join lateral private.split_venda(v.valor_adesao, v.aliquota, v.bonificacao_pct, v.indicacao_valida) s
+  cross join lateral private.split_venda(v.valor_adesao, v.aliquota, v.bonificacao_pct) s
   join public.consultores k on k.id = v.consultor_id
   left join public.profiles p on p.id = v.indicador_id
   order by v.data_venda desc, v.created_at desc limit 1000;
@@ -383,12 +333,12 @@ begin
     (select count(*) from public.vendas where status = 'aprovado' and tipo = 'nova');
 end $function$;
 
-revoke all on function private.split_venda(numeric, numeric, numeric, boolean), private.geralindica_recebimento(numeric, numeric), private.hoje_br() from public, anon, authenticated;
+revoke all on function private.geralindica_recebimento(numeric, numeric), private.hoje_br() from public, anon, authenticated;
 revoke execute on function public.registrar_troca_plano(uuid, numeric, date, text, numeric), public.atualizar_troca_plano(uuid, text, numeric),
-  public.estornar_venda(uuid), public.marcar_indicador_pago(uuid, boolean), public.registrar_recebimento(uuid, numeric, date, text),
+  public.marcar_indicador_pago(uuid, boolean), public.registrar_recebimento(uuid, numeric, date, text),
   public.apagar_recebimento(uuid), public.fechamentos(uuid), public.admin_registrar_fechamento(uuid, date, date, numeric),
   public.vendas_indicador(), public.relatorio_indicador(), public.meus_indicadores(), public.admin_vendas() from public, anon;
 grant execute on function public.registrar_troca_plano(uuid, numeric, date, text, numeric), public.atualizar_troca_plano(uuid, text, numeric),
-  public.estornar_venda(uuid), public.marcar_indicador_pago(uuid, boolean), public.registrar_recebimento(uuid, numeric, date, text),
+  public.marcar_indicador_pago(uuid, boolean), public.registrar_recebimento(uuid, numeric, date, text),
   public.apagar_recebimento(uuid), public.fechamentos(uuid), public.admin_registrar_fechamento(uuid, date, date, numeric),
   public.vendas_indicador(), public.relatorio_indicador(), public.meus_indicadores(), public.admin_vendas() to authenticated;
