@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Info, Lock, ShieldCheck } from 'lucide-react'
 import { brl, cn } from '@/lib/utils'
-import { dataBR, STATUS_VENDA, pct } from '@/lib/negocio'
+import { dataBR, diaBR, somarDiasUteis, STATUS_VENDA } from '@/lib/negocio'
 import type { ConfigSplit, VendaIndicador } from '@/lib/types'
 import { StatusBadge } from '@/components/ui/badges'
 import { Logo } from '@/components/Logo'
@@ -41,7 +41,8 @@ export function TituloPagina({ titulo, sub, children }: { titulo: string; sub?: 
 /** Linha de venda do indicador (só o primeiro nome do cliente, LGPD). */
 export function LinhaVenda({ v, onClick, mostrarCanal }: { v: VendaIndicador; onClick: () => void; mostrarCanal?: boolean }) {
   const s = STATUS_VENDA[v.status]
-  const cor = v.status === 'reprovado' ? '#8494A8' : v.status === 'aguardando_entrevista' ? '#4A5B70' : '#0B2A66'
+  const semValor = v.status === 'reprovado'
+  const cor = semValor ? '#8494A8' : v.status === 'aguardando_entrevista' ? '#4A5B70' : '#0B2A66'
   return (
     <button
       type="button"
@@ -54,11 +55,12 @@ export function LinhaVenda({ v, onClick, mostrarCanal }: { v: VendaIndicador; on
       <div className="min-w-0 flex-1">
         <div className="text-[15px] font-bold">{v.cliente}</div>
         <div className="truncate text-[12px] text-ink-600">
-          {dataBR(v.data_venda)} · {mostrarCanal && v.canal ? v.canal : 'Plano de Saúde'}
+          {dataBR(v.data_venda)} · {v.tipo === 'troca_plano' ? 'Troca de plano' : mostrarCanal && v.canal ? v.canal : 'Plano de Saúde'}
+          {v.indicador_pago_em && v.status === 'aprovado' ? ' · pago' : ''}
         </div>
       </div>
       <div className="flex flex-col items-end gap-[5px]">
-        <span className="text-[15px] font-extrabold" style={{ color: cor, textDecoration: v.status === 'reprovado' ? 'line-through' : 'none' }}>
+        <span className="text-[15px] font-extrabold" style={{ color: cor, textDecoration: semValor ? 'line-through' : 'none' }}>
           {brl(v.estimativa)}
         </span>
         <StatusBadge status={v.status} />
@@ -85,16 +87,19 @@ export function DetalheVenda({ v, config }: { v: VendaIndicador; config: ConfigS
         </div>
         <StatusBadge status={v.status} size="md" />
       </div>
-      <Linha k="Valor da adesão" v={brl(v.valor_adesao)} />
       <Linha k="Consultor" v={v.consultor} />
-      {config && <Linha k="Sua parte" v={`${pct(config.pct_indicador)} do líquido`} />}
+      {v.tipo === 'troca_plano' && <Linha k="Tipo" v="Troca de plano (cláusula de 10 anos)" />}
       <div className="border-t border-dashed border-ink-200" />
       <div className="flex justify-between text-[15px]">
-        <span className="font-bold">Você deve receber (estimativa)</span>
+        <span className="font-bold">Seu marketing (estimativa)</span>
         <span className="font-extrabold text-verde-700">{brl(v.estimativa)}</span>
       </div>
       <div className="rounded-[12px] px-3 py-2.5 text-[13px] leading-[1.5] text-ink-600" style={{ background: s.avBg }}>
-        {s.nota}
+        {v.status === 'aprovado'
+          ? v.indicador_pago_em
+            ? `O consultor marcou o seu Pix como feito em ${diaBR(v.indicador_pago_em)}.`
+            : `${s.nota}${v.aprovado_em ? ` Prazo: até ${somarDiasUteis(v.aprovado_em, 5).toLocaleDateString('pt-BR')} (5 dias úteis).` : ''}`
+          : s.nota}
       </div>
       <AvisoPagamento semImposto={config ? config.aliquota_pf == null || config.aliquota_pj == null : false} />
       <SeloLGPD />
@@ -108,7 +113,7 @@ export function AvisoPagamento({ semImposto }: { semImposto?: boolean }) {
     <div className="flex items-start gap-2 rounded-[12px] border border-ink-200 bg-white px-3 py-2.5 text-[12px] leading-[1.5] text-ink-600">
       <Info size={16} className="mt-px shrink-0" />
       <span>
-        Valor só informativo. Quem paga é o seu consultor, por Pix, depois da aprovação na entrevista de saúde. A Geralindica não recebe nem repassa dinheiro.
+        Valor só informativo, pelo seu marketing de indicação. Quem paga é o seu consultor, por Pix, depois da aprovação na entrevista de saúde. A Geralindica não recebe nem repassa dinheiro.
         {semImposto && ' O imposto ainda não foi definido, então a estimativa ainda não desconta imposto.'}
       </span>
     </div>

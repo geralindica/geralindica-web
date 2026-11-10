@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, FileText, Minus, Plus, Search, X } from 'lucide-react'
+import { BadgeCheck, Minus, Plus, Search } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { abrirArquivo } from '@/components/painel/Contrato'
 import { supabase, mensagemErro } from '@/lib/supabase'
 import { corVagas } from '@/lib/negocio'
 import type { ConsultorRow } from '@/lib/types'
@@ -8,9 +10,8 @@ import { AtivoBadge, GovBadge } from '@/components/ui/badges'
 import { Avatar, Card, Segmentado } from '@/components/painel/comum'
 import { Carregando, ErroBox, useToast } from '@/components/ui/feedback'
 
-type Contrato = { contrato_assinado_em: string | null; contrato_enviado_em: string | null; contrato_arquivo: string | null }
-type ConsAdmin = ConsultorRow & { p: (Contrato & { email: string | null }) | null }
-type IndAdmin = Contrato & { id: string; nome: string; perfil: string | null; tipo_pessoa: string; consultor: string | null; canais: number; ativo: boolean }
+type ConsAdmin = ConsultorRow & { p: { email: string | null; habilitacao_arquivo: string | null; suspenso_em: string | null } | null }
+type IndAdmin = { id: string; nome: string; perfil: string | null; tipo_pessoa: string; consultor: string | null; contrato_etapa: string | null; canais: number; ativo: boolean; suspenso_em: string | null }
 
 export function Usuarios() {
   const [aba, setAba] = useState<'con' | 'ind'>('con')
@@ -21,9 +22,14 @@ export function Usuarios() {
   const cons = useQuery({
     queryKey: ['adm', 'cons'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('consultores').select('*, p:profiles(contrato_assinado_em, contrato_enviado_em, contrato_arquivo, email)').order('vendas', { ascending: false })
-      if (error) throw error
-      return (data ?? []) as ConsAdmin[]
+      const [k, c] = await Promise.all([
+        supabase.from('consultores').select('*, p:profiles(email, habilitacao_arquivo, suspenso_em)').order('vendas', { ascending: false }),
+        supabase.from('contratos').select('parte_id, etapa').eq('tipo', 'consultor').neq('etapa', 'encerrado'),
+      ])
+      if (k.error) throw k.error
+      if (c.error) throw c.error
+      const etapas = new Map(((c.data ?? []) as { parte_id: string; etapa: string }[]).map((x) => [x.parte_id, x.etapa]))
+      return ((k.data ?? []) as ConsAdmin[]).map((x) => ({ ...x, etapa: etapas.get(x.id) ?? null }))
     },
   })
   const inds = useQuery({
@@ -41,7 +47,7 @@ export function Usuarios() {
       if (error) throw error
     },
     onMutate: async ({ id, max }) => {
-      qc.setQueryData<ConsAdmin[]>(['adm', 'cons'], (old) => old?.map((c) => (c.id === id ? { ...c, max_indicadores: Math.min(30, Math.max(c.ocupacao, max)) } : c)))
+      qc.setQueryData<(ConsAdmin & { etapa: string | null })[]>(['adm', 'cons'], (old) => old?.map((c) => (c.id === id ? { ...c, max_indicadores: Math.min(30, Math.max(c.ocupacao, max)) } : c)))
     },
     onError: (e) => {
       toast(mensagemErro(e), 'erro')
@@ -84,7 +90,7 @@ export function Usuarios() {
               <div className="grid grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_210px_minmax(0,1.2fr)_150px] gap-3 border-b border-ink-200 bg-ink-50 px-5 py-2.5 text-[12px] font-bold text-ink-600">
                 <span>Consultor</span>
                 <span>SUSEP</span>
-                <span>Contrato Gov.br</span>
+                <span>Contrato e habilitação</span>
                 <span>Vagas ocupadas</span>
                 <span>Limite de vagas</span>
               </div>
@@ -102,12 +108,29 @@ export function Usuarios() {
                         </div>
                         <div className="flex items-center gap-2 text-[12px] text-ink-600">
                           <span className="truncate">{c.cidade}</span>
-                          <AprovarConsultor id={c.id} aprovado={c.aprovado} />
+                          {c.p?.suspenso_em ? <Remover id={c.id} suspenso /> : <AprovarConsultor id={c.id} aprovado={c.aprovado} />}
                         </div>
                       </div>
                     </div>
                     <span className="font-mono text-[12px]">{c.susep ?? '—'}</span>
-                    <ContratoCelula id={c.id} c={c.p} />
+                    <div className="flex items-center gap-1.5">
+                      <Link to="/admin/contratos" title="Abrir contratos">
+                        <GovBadge etapa={c.etapa} />
+                      </Link>
+                      {c.p?.habilitacao_arquivo ? (
+                        <button
+                          type="button"
+                          title="Ver comprovante de habilitação (cláusula 2.3)"
+                          aria-label="Ver comprovante de habilitação"
+                          onClick={() => abrirArquivo(c.p!.habilitacao_arquivo!).catch((e) => toast(mensagemErro(e), 'erro'))}
+                          className="flex size-7 cursor-pointer items-center justify-center rounded-lg border border-ink-200 bg-white text-verde-700 hover:bg-ink-50"
+                        >
+                          <BadgeCheck size={15} />
+                        </button>
+                      ) : (
+                        <span title="Ainda não enviou o comprovante de habilitação" className="text-[11px] font-bold text-ink-400">sem habilitação</span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-2.5">
                       <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-ink-100">
                         <div className="h-full" style={{ width: `${Math.min(100, (c.ocupacao / c.max_indicadores) * 100)}%`, background: cor }} />
@@ -162,11 +185,16 @@ export function Usuarios() {
               <div key={i.id} className="grid grid-cols-[minmax(0,1.4fr)_70px_minmax(0,1.2fr)_210px_90px_100px] items-center gap-3 border-b border-ink-100 px-5 py-3 text-[14px] last:border-b-0">
                 <div className="min-w-0">
                   <div className="truncate font-bold">{i.nome}</div>
-                  <div className="truncate text-[12px] text-ink-600">{i.perfil ?? '—'}</div>
+                  <div className="flex items-center gap-2 truncate text-[12px] text-ink-600">
+                    {i.perfil ?? '—'}
+                    <Remover id={i.id} suspenso={!!i.suspenso_em} />
+                  </div>
                 </div>
                 <span className="font-mono text-[12px] font-semibold">{i.tipo_pessoa}</span>
                 <span className="truncate">{i.consultor ?? <span className="text-ink-400">Sem consultor</span>}</span>
-                <ContratoCelula id={i.id} c={i} />
+                <Link to="/admin/contratos" title="Abrir contratos">
+                  <GovBadge etapa={i.contrato_etapa} />
+                </Link>
                 <span className="font-bold">{i.canais}</span>
                 <AtivoBadge ativo={i.ativo} />
               </div>
@@ -178,47 +206,35 @@ export function Usuarios() {
   )
 }
 
-/** Contrato Gov.br: a pessoa envia o PDF assinado e o admin confere aqui. */
-function ContratoCelula({ id, c }: { id: string; c: Contrato | null }) {
+/** Tira do site (suspende, encerra contratos) ou reativa. */
+function Remover({ id, suspenso }: { id: string; suspenso: boolean }) {
   const qc = useQueryClient()
   const toast = useToast()
-  const conferir = useMutation({
-    mutationFn: async (aprovado: boolean) => {
-      const { error } = await supabase.rpc('admin_conferir_contrato', { p_usuario: id, p_aprovado: aprovado })
+  const m = useMutation({
+    mutationFn: async () => {
+      if (suspenso) {
+        const { error } = await supabase.rpc('admin_reativar_usuario', { p_usuario: id })
+        if (error) throw error
+        return 'Reativado. Consultor precisa ser aprovado de novo e assinar outro contrato.'
+      }
+      const motivo = window.prompt('Motivo (a pessoa vai ver):', 'Descumprimento do contrato')
+      if (motivo === null) return null
+      const { error } = await supabase.rpc('admin_remover_usuario', { p_usuario: id, p_motivo: motivo })
       if (error) throw error
-      return aprovado
+      return 'Removido do site. Contratos encerrados.'
     },
-    onSuccess: (aprovado) => {
-      toast(aprovado ? 'Contrato aprovado.' : 'Contrato recusado. A pessoa vai ver o pedido para enviar de novo.')
+    onSuccess: (msg) => {
+      if (!msg) return
+      toast(msg)
       qc.invalidateQueries({ queryKey: ['adm'] })
+      qc.invalidateQueries({ queryKey: ['consultores'] })
     },
     onError: (e) => toast(mensagemErro(e), 'erro'),
   })
-  const abrir = async () => {
-    const { data, error } = await supabase.storage.from('contratos').createSignedUrl(c!.contrato_arquivo!, 600)
-    if (error) return toast(mensagemErro(error), 'erro')
-    window.open(data.signedUrl, '_blank', 'noopener')
-  }
-  const btn = 'flex size-7 cursor-pointer items-center justify-center rounded-lg border border-ink-200 bg-white hover:bg-ink-50 disabled:opacity-40'
   return (
-    <div className="flex items-center gap-1.5">
-      <GovBadge assinado={!!c?.contrato_assinado_em} enviado={!!c?.contrato_enviado_em} />
-      {c?.contrato_arquivo && (
-        <button type="button" onClick={abrir} title="Ver o PDF assinado" aria-label="Ver o PDF assinado" className={btn}>
-          <FileText size={15} />
-        </button>
-      )}
-      {c?.contrato_arquivo && !c.contrato_assinado_em && (
-        <>
-          <button type="button" disabled={conferir.isPending} onClick={() => conferir.mutate(true)} title="Aprovar contrato" aria-label="Aprovar contrato" className={`${btn} text-verde-700`}>
-            <Check size={15} strokeWidth={3} />
-          </button>
-          <button type="button" disabled={conferir.isPending} onClick={() => conferir.mutate(false)} title="Recusar contrato" aria-label="Recusar contrato" className={`${btn} text-vermelho-fg`}>
-            <X size={15} strokeWidth={3} />
-          </button>
-        </>
-      )}
-    </div>
+    <button type="button" disabled={m.isPending} onClick={() => m.mutate()} className={suspenso ? 'shrink-0 cursor-pointer rounded-full bg-vermelho-bg px-2 py-0.5 font-bold text-vermelho-fg' : 'shrink-0 cursor-pointer font-bold text-ink-400 hover:text-vermelho-fg'}>
+      {suspenso ? 'Suspenso · Reativar' : 'Remover'}
+    </button>
   )
 }
 

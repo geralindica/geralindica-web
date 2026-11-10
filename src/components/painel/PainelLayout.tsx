@@ -113,10 +113,21 @@ export function PainelLayout({ nav, subtitulo, papelLabel, foto, escuro, barraIn
 
         <main className={cn('flex-1 px-[18px] py-5 sm:px-6 lg:px-10 lg:py-8', barraInferior && 'pb-28 lg:pb-8')}>
           <div className="mx-auto flex w-full flex-col gap-5" style={{ maxWidth: largura }}>
-            <ContratoPendente />
-            <Suspense fallback={<Carregando />}>
-              <Outlet />
-            </Suspense>
+            {profile?.suspenso_em ? (
+              <div className="rounded-[18px] border border-vermelho-fg/30 bg-white p-6 text-center">
+                <h1 className="m-0 text-[22px] font-extrabold">Sua conta foi suspensa</h1>
+                <p className="mx-auto mt-2 max-w-[520px] text-[14px] leading-[1.55] text-ink-600">
+                  {profile.suspenso_motivo ?? 'A Geralindica suspendeu esta conta.'} Os contratos foram encerrados. Os valores de vendas já aprovadas continuam devidos. Dúvidas: WhatsApp da Geralindica, (21) 98466-5584.
+                </p>
+              </div>
+            ) : (
+              <>
+                <ContratoPendente />
+                <Suspense fallback={<Carregando />}>
+                  <Outlet />
+                </Suspense>
+              </>
+            )}
           </div>
         </main>
 
@@ -131,7 +142,10 @@ export function PainelLayout({ nav, subtitulo, papelLabel, foto, escuro, barraIn
               >
                 {({ isActive }) => (
                   <>
-                    <n.icon size={23} strokeWidth={isActive ? 2.4 : 1.9} />
+                    <span className="relative">
+                      <n.icon size={23} strokeWidth={isActive ? 2.4 : 1.9} />
+                      {n.badge ? <span className="absolute -right-2 -top-1 rounded-full bg-verde-600 px-[5px] text-[10px] font-extrabold leading-[15px] text-white">{n.badge}</span> : null}
+                    </span>
                     {n.short ?? n.label}
                   </>
                 )}

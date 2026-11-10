@@ -127,14 +127,30 @@ export function corEtapa(e: Etapa) {
 // ---------- Status da venda registrada (badge) ----------
 export const STATUS_VENDA: Record<StatusVenda, { label: string; bg: string; fg: string; avBg: string; avFg: string; nota: string }> = {
   aguardando_entrevista: { label: 'Aguardando entrevista', bg: '#FFF3D6', fg: '#9A5B00', avBg: '#FFF3D6', avFg: '#9A5B00', nota: 'O cliente pagou ao consultor, que segura o valor até a entrevista de saúde.' },
-  aprovado: { label: 'Verdinho ✓', bg: '#0F9D58', fg: '#fff', avBg: '#ECF8F1', avFg: '#0A7F47', nota: 'Entrevista aprovada. O consultor faz o Pix da sua parte.' },
-  reprovado: { label: 'Reprovado', bg: '#FCEAE8', fg: '#B3372F', avBg: '#FCEAE8', avFg: '#B3372F', nota: 'Cliente reprovado na entrevista de saúde. O consultor devolveu o valor; não há comissão.' },
+  aprovado: { label: 'Verdinho ✓', bg: '#0F9D58', fg: '#fff', avBg: '#ECF8F1', avFg: '#0A7F47', nota: 'Entrevista aprovada. O consultor faz o Pix do seu marketing.' },
+  reprovado: { label: 'Reprovado', bg: '#FCEAE8', fg: '#B3372F', avBg: '#FCEAE8', avFg: '#B3372F', nota: 'Cliente reprovado na entrevista de saúde. O consultor devolveu o valor ao cliente; ninguém recebe.' },
 }
 export const STATUS_VENDA_OPCOES: { v: StatusVenda; label: string }[] = [
   { v: 'aguardando_entrevista', label: 'Aguardando entrevista' },
   { v: 'aprovado', label: 'Aprovado no Verdinho' },
   { v: 'reprovado', label: 'Reprovado e devolvido' },
 ]
+
+// ---------- Prazos dos contratos ----------
+/** Soma dias úteis (seg. a sex.; não considera feriados). */
+export function somarDiasUteis(inicio: Date | string, dias: number) {
+  const d = new Date(typeof inicio === 'string' && inicio.length === 10 ? inicio + 'T12:00' : inicio)
+  let n = 0
+  while (n < dias) {
+    d.setDate(d.getDate() + 1)
+    if (d.getDay() !== 0 && d.getDay() !== 6) n++
+  }
+  return d
+}
+
+/** Mês por extenso a partir de AAAA-MM-DD. */
+export const mesBR = (iso: string) => new Date(iso.slice(0, 10) + 'T12:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+export const diaBR = (iso: string) => new Date(iso.slice(0, 10) + 'T12:00').toLocaleDateString('pt-BR')
 
 // ---------- Temperatura (reputação do consultor) ----------
 // O número (0 a 100) vem pronto do banco. Aqui só as faixas para exibir. PROVISÓRIO, como a fórmula.

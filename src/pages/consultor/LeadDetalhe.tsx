@@ -15,6 +15,7 @@ import { Carregando, ErroBox, Vazio, useToast } from '@/components/ui/feedback'
 import { usePerfil } from '@/auth/AuthProvider'
 import { useConfig } from '@/data/queries'
 import { useLead, useMeuConsultor } from './dados'
+import { PosVenda } from './PosVenda'
 
 const ICONE_EVENTO: Record<LeadEvento['tipo'], { icon: LucideIcon; bg: string; fg: string }> = {
   consultor: { icon: User, bg: '#EAEFF5', fg: '#1F2E45' },
@@ -219,6 +220,9 @@ export function LeadDetalhe() {
           </Card>
 
           <RegistrarVenda lead={lead} venda={q.data!.venda} />
+          {q.data!.venda?.status === 'aprovado' && (
+            <PosVenda venda={q.data!.venda} trocas={q.data!.trocas} recebimentos={q.data!.recebimentos.filter((r) => r.venda_id === q.data!.venda!.id)} />
+          )}
 
           <Card className="flex flex-col gap-3 p-[18px]">
             <span className="text-[15px] font-extrabold">Contato do cliente</span>

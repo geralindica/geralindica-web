@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/auth/AuthProvider'
 import { ETAPAS_FINAIS, calcularSplit } from '@/lib/negocio'
-import type { ConsultorRow, LeadComOrigem, LeadEvento, Venda } from '@/lib/types'
+import type { ConsultorRow, LeadComOrigem, LeadEvento, Recebimento, Venda } from '@/lib/types'
 
 /** Data no fuso do navegador, no formato AAAA-MM-DD. */
 const diaLocal = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -57,16 +57,21 @@ export function useLead(id: string | undefined) {
       const [lead, eventos, venda] = await Promise.all([
         supabase.from('leads').select(SELECT_LEAD).eq('id', id!).maybeSingle(),
         supabase.from('lead_eventos').select('*').eq('lead_id', id!).order('created_at'),
-        supabase.from('vendas').select('*').eq('lead_id', id!).maybeSingle(),
+        supabase.from('vendas').select('*').eq('lead_id', id!).order('created_at'),
       ])
       if (lead.error) throw lead.error
       if (eventos.error) throw eventos.error
       if (venda.error) throw venda.error
-      const v = venda.data as Venda | null
+      const vendas = ((venda.data ?? []) as Venda[]).map((v) => ({ ...v, valor_adesao: Number(v.valor_adesao) }))
+      const ids = vendas.map((v) => v.id)
+      const rec = ids.length ? await supabase.from('venda_recebimentos').select('*').in('venda_id', ids).order('recebido_em') : { data: [], error: null }
+      if (rec.error) throw rec.error
       return {
         lead: lead.data ? normalizar(lead.data as LeadBruto) : null,
         eventos: (eventos.data ?? []) as LeadEvento[],
-        venda: v ? { ...v, valor_adesao: Number(v.valor_adesao) } : null,
+        venda: vendas.find((v) => v.tipo === 'nova') ?? null,
+        trocas: vendas.filter((v) => v.tipo === 'troca_plano'),
+        recebimentos: ((rec.data ?? []) as Recebimento[]).map((r) => ({ ...r, valor: Number(r.valor) })),
       }
     },
   })

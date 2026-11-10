@@ -11,6 +11,9 @@ import { buttonVariants } from '@/components/ui/button'
 import { Card } from '@/components/painel/comum'
 import { Carregando, ErroBox } from '@/components/ui/feedback'
 import { useDashboard, useLeadsCRM, useMeuConsultor } from './dados'
+import { situacao, useFechamentos } from '@/pages/admin/Fechamentos'
+import { mesBR } from '@/lib/negocio'
+import { cn } from '@/lib/utils'
 
 const DIA = 86400_000
 
@@ -100,6 +103,8 @@ export function Dashboard() {
           </div>
         </Kpi>
       </div>
+
+      <FechamentoGeralindica />
 
       <div className="grid gap-3.5 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
         <Card className="flex flex-col gap-[18px] p-[22px]">
@@ -208,6 +213,35 @@ function Kpi({ icon, rotulo, valor, sufixo, extra, children }: { icon: ReactNode
         {extra}
       </div>
       <div className="text-[12px] font-bold">{children}</div>
+    </Card>
+  )
+}
+
+/** Cláusulas 3.3 e 4.4: a parte da Geralindica do mês vence no dia 5 do mês seguinte, com juros de 1% ao dia. */
+function FechamentoGeralindica() {
+  const p = usePerfil()
+  const q = useFechamentos(p.id)
+  const meses = (q.data ?? []).slice(0, 4)
+  if (!meses.length) return null
+  return (
+    <Card className="flex flex-col gap-3 p-5">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <span className="text-[16px] font-extrabold">Pagamento à Geralindica</span>
+        <span className="text-[12px] font-semibold text-ink-600">Vence todo dia 5 · atraso de 1% ao dia · Pix combinado pelo chat</span>
+      </div>
+      <div className="flex flex-col">
+        {meses.map((f) => {
+          const s = situacao(f)
+          return (
+            <div key={f.mes} className="flex flex-wrap items-center gap-3 border-t border-ink-100 py-2.5 text-[14px]">
+              <span className="min-w-[140px] flex-1 font-bold capitalize">{mesBR(f.mes)}</span>
+              <span className={cn('font-extrabold', f.valor < 0 && 'text-verde-700')}>{f.valor < 0 ? `A Geralindica te devolve ${brl(-f.valor)}` : brl(f.valor)}</span>
+              {f.juros > 0 && !f.pago_em && <span className="text-[13px] font-bold text-vermelho-fg">+ {brl(f.juros)} de juros</span>}
+              <span className={cn('rounded-full px-2.5 py-0.5 text-[12px] font-bold', s.cls)}>{s.label}</span>
+            </div>
+          )
+        })}
+      </div>
     </Card>
   )
 }
